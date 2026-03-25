@@ -16,7 +16,7 @@
         <p class="eyebrow">AUTO STAFF SCHEDULER</p>
         <h1>근무기간과 휴무 규칙을 입력하면 자동으로 근무자를 배치합니다</h1>
         <p class="hero-text">
-          근무기간, 근무자, 휴무일, 우선순위, 자동 휴무 규칙을 입력하면 주어진 조건에 맞춰 근무표를 자동 생성하고 텍스트와 시각화 두 방식으로 확인할 수 있습니다.
+          근무기간, 근무자, 휴무일, 우선순위, 자동 휴무 규칙을 입력하면 주어진 조건에 맞춰 근무표를 자동 생성하고 텍스트와 시각화 두 방식으로 확인할 수 있습니다. 입력값이 바뀌면 스케줄이 자동으로 다시 계산됩니다.
         </p>
       </div>
       <div class="hero-glass hero-glass-mini">
@@ -57,7 +57,9 @@
 
           <label class="field">
             <span>배치 우선순위</span>
-            <input id="priorityInput" type="text" placeholder="예: 토,일,월,금,화,목,수">
+            <div class="priority-editor">
+              <div id="priorityList" class="priority-list"></div>
+            </div>
           </label>
 
           <label class="field">
@@ -67,10 +69,12 @@
 
           <label class="field">
             <span>월별 자동 휴무 규칙</span>
-            <textarea id="nthRulesInput" rows="2" placeholder="한 줄에 하나씩 입력&#10;예: 2 목&#10;4 목"></textarea>
+            <div class="rule-editor">
+              <div id="nthRulesList" class="rule-list"></div>
+              <button id="addNthRuleBtn" class="secondary-button" type="button">규칙 추가</button>
+            </div>
           </label>
 
-          <button id="generateBtn" class="primary-button" type="button">스케줄 생성</button>
           <p id="errorText" class="error-text" aria-live="polite"></p>
         </section>
 

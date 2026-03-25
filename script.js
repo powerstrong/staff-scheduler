@@ -40,8 +40,9 @@ const elements = {
   startDate: document.querySelector("#startDate"),
   endDate: document.querySelector("#endDate"),
   workersInput: document.querySelector("#workersInput"),
-  priorityInput: document.querySelector("#priorityInput"),
-  nthRulesInput: document.querySelector("#nthRulesInput"),
+  priorityList: document.querySelector("#priorityList"),
+  nthRulesList: document.querySelector("#nthRulesList"),
+  addNthRuleBtn: document.querySelector("#addNthRuleBtn"),
   weeklyHolidayChecks: document.querySelector("#weeklyHolidayChecks"),
   errorText: document.querySelector("#errorText"),
   weeklyHolidayList: document.querySelector("#weeklyHolidayList"),
@@ -57,7 +58,6 @@ const elements = {
   workdayCountInput: document.querySelector("#workdayCountInput"),
   addWorkdayBtn: document.querySelector("#addWorkdayBtn"),
   customWorkdayList: document.querySelector("#customWorkdayList"),
-  generateBtn: document.querySelector("#generateBtn"),
   loadSampleBtn: document.querySelector("#loadSampleBtn"),
   summaryGrid: document.querySelector("#summaryGrid"),
   calendarGrid: document.querySelector("#calendarGrid"),
@@ -118,22 +118,9 @@ function formatPriority(order) {
   return order.map((day) => dayNames[day]).join(" → ");
 }
 
-function parsePriority(raw) {
-  const tokens = raw.split(/[\s,>/-]+/).map((value) => value.trim()).filter(Boolean);
-  if (tokens.length === 0) {
-    return { order: [...defaultPriority], usedDefault: true, error: "" };
-  }
-
-  const parsed = tokens.map(parseDayToken);
-  if (parsed.some((day) => day === null) || new Set(parsed).size !== 7) {
-    return {
-      order: [...defaultPriority],
-      usedDefault: true,
-      error: "배치 우선순위는 일~토 7개 요일을 한 번씩 입력해야 해서 기본값으로 계산했습니다.",
-    };
-  }
-
-  return { order: parsed, usedDefault: false, error: "" };
+function readPriorityOrder() {
+  const values = [...elements.priorityList.querySelectorAll(".priority-item")].map((item) => Number(item.dataset.day));
+  return values.length === 7 ? values : [...defaultPriority];
 }
 
 function parseWeeklyHolidayDays() {
@@ -142,34 +129,15 @@ function parseWeeklyHolidayDays() {
     .sort((a, b) => a - b);
 }
 
-function parseNthRules(raw) {
-  const lines = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  if (lines.length === 0) {
-    return { rules: [...defaultNthRules], usedDefault: true, error: "" };
-  }
+function readNthRuleRows() {
+  return [...elements.nthRulesList.querySelectorAll(".rule-row")].map((row) => ({
+    nth: Number(row.querySelector(".nth-select").value),
+    day: Number(row.querySelector(".day-select").value),
+  }));
+}
 
-  const rules = [];
-  for (const line of lines) {
-    const match = line.match(/^(\d+)\s*([가-힣A-Za-z]+)$/);
-    if (!match) {
-      return {
-        rules: [...defaultNthRules],
-        usedDefault: true,
-        error: "월별 자동 휴무 규칙 형식이 올바르지 않아 기본값으로 계산했습니다. 예: 2 목",
-      };
-    }
-    const nth = Number(match[1]);
-    const day = parseDayToken(match[2]);
-    if (!Number.isInteger(nth) || nth <= 0 || nth > 5 || day === null) {
-      return {
-        rules: [...defaultNthRules],
-        usedDefault: true,
-        error: "월별 자동 휴무 규칙 형식이 올바르지 않아 기본값으로 계산했습니다. 예: 2 목",
-      };
-    }
-    rules.push({ nth, day });
-  }
-
+function parseNthRules() {
+  const rules = readNthRuleRows().filter((rule) => Number.isInteger(rule.nth) && rule.nth > 0 && rule.nth <= 5 && Number.isInteger(rule.day));
   return { rules, usedDefault: false, error: "" };
 }
 
@@ -312,7 +280,7 @@ function updateAutoHolidayPreview() {
   }
 
   const weeklyHolidayDays = parseWeeklyHolidayDays();
-  const nthRuleResult = parseNthRules(elements.nthRulesInput.value);
+  const nthRuleResult = parseNthRules();
   const autoGroups = getAutomaticHolidayGroups(range.start, range.end, weeklyHolidayDays, nthRuleResult.rules);
 
   const customHolidayKeys = new Set(state.customHolidays.map((item) => item.date));
@@ -507,8 +475,8 @@ function generateSchedule() {
     return;
   }
 
-  const priorityResult = parsePriority(elements.priorityInput.value);
-  const nthRuleResult = parseNthRules(elements.nthRulesInput.value);
+  const priorityResult = { order: readPriorityOrder(), usedDefault: false, error: "" };
+  const nthRuleResult = parseNthRules();
   const weeklyHolidayDays = parseWeeklyHolidayDays();
 
   const rangeStartKey = toDateKey(range.start);
@@ -806,6 +774,19 @@ function syncDates() {
   updateAutoHolidayPreview();
 }
 
+function getNextQuarterEnd(fromDate) {
+  const year = fromDate.getFullYear();
+  const candidates = [
+    new Date(year, 2, 31, 12),
+    new Date(year, 5, 30, 12),
+    new Date(year, 8, 30, 12),
+    new Date(year, 11, 31, 12),
+    new Date(year + 1, 2, 31, 12),
+  ];
+  const upcoming = candidates.filter((date) => date >= fromDate);
+  return upcoming[1] ?? upcoming[upcoming.length - 1] ?? candidates[candidates.length - 1];
+}
+
 function buildWeeklyHolidayChecks() {
   elements.weeklyHolidayChecks.innerHTML = "";
   for (let day = 0; day < 7; day += 1) {
@@ -823,18 +804,117 @@ function buildWeeklyHolidayChecks() {
   }
 }
 
+function renderPriorityEditor(order = defaultPriority) {
+  elements.priorityList.innerHTML = "";
+  order.forEach((day, index) => {
+    const item = document.createElement("div");
+    item.className = "priority-item";
+    item.dataset.day = String(day);
+    item.draggable = true;
+    item.innerHTML = `
+      <span class="priority-rank">${index + 1}</span>
+      <span class="priority-day">${dayNames[day]}요일</span>
+      <span class="priority-grip" aria-hidden="true">⋮⋮</span>
+    `;
+    item.addEventListener("dragstart", () => {
+      item.classList.add("dragging");
+    });
+    item.addEventListener("dragend", () => {
+      item.classList.remove("dragging");
+      elements.priorityList.querySelectorAll(".drag-over").forEach((node) => node.classList.remove("drag-over"));
+    });
+    item.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      elements.priorityList.querySelectorAll(".drag-over").forEach((node) => node.classList.remove("drag-over"));
+      item.classList.add("drag-over");
+    });
+    item.addEventListener("dragleave", () => {
+      item.classList.remove("drag-over");
+    });
+    item.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const dragged = elements.priorityList.querySelector(".dragging");
+      item.classList.remove("drag-over");
+      if (!dragged || dragged === item) {
+        return;
+      }
+      const orderValues = readPriorityOrder();
+      const draggedDay = Number(dragged.dataset.day);
+      const targetDay = Number(item.dataset.day);
+      const draggedIndex = orderValues.indexOf(draggedDay);
+      const targetIndex = orderValues.indexOf(targetDay);
+      if (draggedIndex < 0 || targetIndex < 0) {
+        return;
+      }
+      orderValues.splice(draggedIndex, 1);
+      orderValues.splice(targetIndex, 0, draggedDay);
+      renderPriorityEditor(orderValues);
+      updateAutoHolidayPreview();
+      generateSchedule();
+    });
+    elements.priorityList.appendChild(item);
+  });
+}
+
+function createNthRuleRow(rule = { nth: 2, day: 4 }) {
+  const row = document.createElement("div");
+  row.className = "rule-row";
+  row.innerHTML = `
+    <select class="nth-select" aria-label="몇 번째 주">
+      <option value="1">1번째</option>
+      <option value="2">2번째</option>
+      <option value="3">3번째</option>
+      <option value="4">4번째</option>
+      <option value="5">5번째</option>
+    </select>
+    <select class="day-select" aria-label="요일">
+      <option value="0">일요일</option>
+      <option value="1">월요일</option>
+      <option value="2">화요일</option>
+      <option value="3">수요일</option>
+      <option value="4">목요일</option>
+      <option value="5">금요일</option>
+      <option value="6">토요일</option>
+    </select>
+    <button class="danger-button remove-rule-button" type="button">삭제</button>
+  `;
+  row.querySelector(".nth-select").value = String(rule.nth);
+  row.querySelector(".day-select").value = String(rule.day);
+  row.querySelector(".nth-select").addEventListener("change", () => {
+    updateAutoHolidayPreview();
+    generateSchedule();
+  });
+  row.querySelector(".day-select").addEventListener("change", () => {
+    updateAutoHolidayPreview();
+    generateSchedule();
+  });
+  row.querySelector(".remove-rule-button").addEventListener("click", () => {
+    row.remove();
+    updateAutoHolidayPreview();
+    generateSchedule();
+  });
+  return row;
+}
+
+function renderNthRuleEditor(rules = defaultNthRules) {
+  elements.nthRulesList.innerHTML = "";
+  for (const rule of rules) {
+    elements.nthRulesList.appendChild(createNthRuleRow(rule));
+  }
+}
+
 function loadSampleData() {
   const today = new Date();
-  const start = new Date(today.getFullYear(), today.getMonth(), 1, 12);
-  const end = new Date(today.getFullYear(), today.getMonth() + 5, 30, 12);
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12);
+  const end = getNextQuarterEnd(start);
   elements.startDate.value = toDateKey(start);
   elements.endDate.value = toDateKey(end);
-  elements.workersInput.value = "AAA BBB CCC DDD EEE FFF";
-  elements.priorityInput.value = "토,일,월,금,화,목,수";
-  elements.nthRulesInput.value = "2 목\n4 목";
+  elements.workersInput.value = "최다은 김서준 박지우 이현우 한서윤";
   state.customHolidays = [];
   state.customWorkdays = [];
   buildWeeklyHolidayChecks();
+  renderPriorityEditor(defaultPriority);
+  renderNthRuleEditor(defaultNthRules);
   upsertHoliday(toDateKey(new Date(start.getFullYear(), start.getMonth(), 8, 12)), false);
   upsertHoliday(toDateKey(new Date(start.getFullYear(), start.getMonth() + 1, 15, 12)), true);
   upsertWorkday(toDateKey(new Date(start.getFullYear(), start.getMonth(), 11, 12)), 5);
@@ -856,16 +936,12 @@ elements.endDate.addEventListener("change", () => {
 });
 
 elements.workersInput.addEventListener("input", () => generateSchedule());
-elements.priorityInput.addEventListener("input", () => {
-  updateAutoHolidayPreview();
-  generateSchedule();
-});
-elements.nthRulesInput.addEventListener("input", () => {
-  updateAutoHolidayPreview();
-  generateSchedule();
-});
-elements.generateBtn.addEventListener("click", () => generateSchedule());
 elements.loadSampleBtn.addEventListener("click", () => loadSampleData());
+elements.addNthRuleBtn.addEventListener("click", () => {
+  elements.nthRulesList.appendChild(createNthRuleRow({ nth: 2, day: 4 }));
+  updateAutoHolidayPreview();
+  generateSchedule();
+});
 
 elements.addHolidayBtn.addEventListener("click", () => {
   if (!elements.holidayDateInput.value) {
@@ -906,6 +982,7 @@ elements.resultTabs.addEventListener("click", (event) => {
 
 (function init() {
   buildWeeklyHolidayChecks();
+  renderPriorityEditor(defaultPriority);
   setActiveTab("visual");
   loadSampleData();
 })();

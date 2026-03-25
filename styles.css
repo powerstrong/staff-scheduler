@@ -188,6 +188,18 @@ textarea {
   gap: 10px;
 }
 
+.rule-editor,
+.rule-list {
+  display: grid;
+  gap: 8px;
+}
+
+.priority-editor,
+.priority-list {
+  display: grid;
+  gap: 8px;
+}
+
 .field {
   gap: 6px;
 }
@@ -336,6 +348,73 @@ textarea {
 .entry-meta span {
   color: var(--muted);
   font-size: 0.76rem;
+}
+
+.rule-row {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(102, 74, 32, 0.08);
+}
+
+.rule-row select {
+  width: 100%;
+  border: 1px solid rgba(102, 74, 32, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 8px 10px;
+  color: var(--ink);
+  font: inherit;
+}
+
+.priority-item {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(102, 74, 32, 0.08);
+  cursor: grab;
+}
+
+.priority-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(31, 111, 93, 0.12);
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.priority-day {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.priority-grip {
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  font-size: 1rem;
+}
+
+.priority-item.dragging {
+  opacity: 0.55;
+  cursor: grabbing;
+}
+
+.priority-item.drag-over {
+  border-color: rgba(31, 111, 93, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(31, 111, 93, 0.18);
 }
 
 .danger-button {
@@ -596,6 +675,7 @@ textarea {
     width: min(100% - 16px, 100%);
   }
 
+  .rule-row,
   .compact-schedule-list,
   .compact-worker-stats,
   .compact-calendar-grid,
