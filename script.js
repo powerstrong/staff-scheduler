@@ -1,24 +1,24 @@
-const dayNames = ["ÀÏ", "¿ù", "È­", "¼ö", "¸ñ", "±İ", "Åä"];
+const dayNames = ["ì¼", "ì›”", "í™”", "ìˆ˜", "ëª©", "ê¸ˆ", "í† "];
 const dayTokenMap = {
-  ÀÏ: 0,
+  ì¼: 0,
   sun: 0,
   sunday: 0,
-  ¿ù: 1,
+  ì›”: 1,
   mon: 1,
   monday: 1,
-  È­: 2,
+  í™”: 2,
   tue: 2,
   tuesday: 2,
-  ¼ö: 3,
+  ìˆ˜: 3,
   wed: 3,
   wednesday: 3,
-  ¸ñ: 4,
+  ëª©: 4,
   thu: 4,
   thursday: 4,
-  ±İ: 5,
+  ê¸ˆ: 5,
   fri: 5,
   friday: 5,
-  Åä: 6,
+  í† : 6,
   sat: 6,
   saturday: 6,
 };
@@ -115,7 +115,7 @@ function parseDayToken(token) {
 }
 
 function formatPriority(order) {
-  return order.map((day) => dayNames[day]).join(" ¡æ ");
+  return order.map((day) => dayNames[day]).join(" â†’ ");
 }
 
 function parsePriority(raw) {
@@ -129,7 +129,7 @@ function parsePriority(raw) {
     return {
       order: [...defaultPriority],
       usedDefault: true,
-      error: "¹èÄ¡ ¿ì¼±¼øÀ§´Â ÀÏ~Åä 7°³ ¿äÀÏÀ» ÇÑ ¹ø¾¿ ÀÔ·ÂÇØ¾ß ÇØ¼­ ±âº»°ªÀ¸·Î °è»êÇß½À´Ï´Ù.",
+      error: "ë°°ì¹˜ ìš°ì„ ìˆœìœ„ëŠ” ì¼~í†  7ê°œ ìš”ì¼ì„ í•œ ë²ˆì”© ì…ë ¥í•´ì•¼ í•´ì„œ ê¸°ë³¸ê°’ìœ¼ë¡œ ê³„ì‚°í–ˆìŠµë‹ˆë‹¤.",
     };
   }
 
@@ -150,12 +150,12 @@ function parseNthRules(raw) {
 
   const rules = [];
   for (const line of lines) {
-    const match = line.match(/^(\d+)\s*([°¡-ÆRA-Za-z]+)$/);
+    const match = line.match(/^(\d+)\s*([ê°€-í£A-Za-z]+)$/);
     if (!match) {
       return {
         rules: [...defaultNthRules],
         usedDefault: true,
-        error: "¿ùº° ÀÚµ¿ ÈŞ¹« ±ÔÄ¢ Çü½ÄÀÌ ¿Ã¹Ù¸£Áö ¾Ê¾Æ ±âº»°ªÀ¸·Î °è»êÇß½À´Ï´Ù. ¿¹: 2 ¸ñ",
+        error: "ì›”ë³„ ìë™ íœ´ë¬´ ê·œì¹™ í˜•ì‹ì´ ì˜¬ë°”ë¥´ì§€ ì•Šì•„ ê¸°ë³¸ê°’ìœ¼ë¡œ ê³„ì‚°í–ˆìŠµë‹ˆë‹¤. ì˜ˆ: 2 ëª©",
       };
     }
     const nth = Number(match[1]);
@@ -164,7 +164,7 @@ function parseNthRules(raw) {
       return {
         rules: [...defaultNthRules],
         usedDefault: true,
-        error: "¿ùº° ÀÚµ¿ ÈŞ¹« ±ÔÄ¢ Çü½ÄÀÌ ¿Ã¹Ù¸£Áö ¾Ê¾Æ ±âº»°ªÀ¸·Î °è»êÇß½À´Ï´Ù. ¿¹: 2 ¸ñ",
+        error: "ì›”ë³„ ìë™ íœ´ë¬´ ê·œì¹™ í˜•ì‹ì´ ì˜¬ë°”ë¥´ì§€ ì•Šì•„ ê¸°ë³¸ê°’ìœ¼ë¡œ ê³„ì‚°í–ˆìŠµë‹ˆë‹¤. ì˜ˆ: 2 ëª©",
       };
     }
     rules.push({ nth, day });
@@ -229,7 +229,7 @@ function upsertWorkday(dateKey, workerCount) {
 function renderDatePills(target, dates) {
   target.innerHTML = "";
   if (dates.length === 0) {
-    target.innerHTML = '<div class="empty-state">ÇØ´ç ±ÔÄ¢À¸·Î »ı¼ºµÈ ÈŞ¹«ÀÏÀÌ ¾ø½À´Ï´Ù.</div>';
+    target.innerHTML = '<div class="empty-state">í•´ë‹¹ ê·œì¹™ìœ¼ë¡œ ìƒì„±ëœ íœ´ë¬´ì¼ì´ ì—†ìŠµë‹ˆë‹¤.</div>';
     return;
   }
   for (const date of dates.slice(0, 18)) {
@@ -241,7 +241,7 @@ function renderDatePills(target, dates) {
   if (dates.length > 18) {
     const pill = document.createElement("span");
     pill.className = "date-pill";
-    pill.textContent = `¿Ü ${dates.length - 18}ÀÏ`;
+    pill.textContent = `ì™¸ ${dates.length - 18}ì¼`;
     target.appendChild(pill);
   }
 }
@@ -250,7 +250,7 @@ function renderCustomHolidayList() {
   const target = elements.customHolidayList;
   target.innerHTML = "";
   if (state.customHolidays.length === 0) {
-    target.innerHTML = '<div class="empty-state">Ãß°¡µÈ Ä¿½ºÅÒ ÈŞ¹«ÀÏÀÌ ¾ø½À´Ï´Ù.</div>';
+    target.innerHTML = '<div class="empty-state">ì¶”ê°€ëœ ì»¤ìŠ¤í…€ íœ´ë¬´ì¼ì´ ì—†ìŠµë‹ˆë‹¤.</div>';
     return;
   }
 
@@ -260,9 +260,9 @@ function renderCustomHolidayList() {
     row.innerHTML = `
       <div class="entry-meta">
         <strong>${item.date}</strong>
-        <span>${item.isFree ? "¹«·áÈŞÀÏ" : "ÀÏ¹İ ÈŞ¹«ÀÏ"}</span>
+        <span>${item.isFree ? "ë¬´ë£Œíœ´ì¼" : "ì¼ë°˜ íœ´ë¬´ì¼"}</span>
       </div>
-      <button class="danger-button" type="button">»èÁ¦</button>
+      <button class="danger-button" type="button">ì‚­ì œ</button>
     `;
     row.querySelector("button").addEventListener("click", () => {
       state.customHolidays = state.customHolidays.filter((holiday) => holiday.date !== item.date);
@@ -277,7 +277,7 @@ function renderCustomWorkdayList() {
   const target = elements.customWorkdayList;
   target.innerHTML = "";
   if (state.customWorkdays.length === 0) {
-    target.innerHTML = '<div class="empty-state">Ãß°¡µÈ Ä¿½ºÅÒ ±Ù¹«ÀÏÀÌ ¾ø½À´Ï´Ù.</div>';
+    target.innerHTML = '<div class="empty-state">ì¶”ê°€ëœ ì»¤ìŠ¤í…€ ê·¼ë¬´ì¼ì´ ì—†ìŠµë‹ˆë‹¤.</div>';
     return;
   }
 
@@ -287,9 +287,9 @@ function renderCustomWorkdayList() {
     row.innerHTML = `
       <div class="entry-meta">
         <strong>${item.date}</strong>
-        <span>${item.workerCount}¸í ¹èÄ¡</span>
+        <span>${item.workerCount}ëª… ë°°ì¹˜</span>
       </div>
-      <button class="danger-button" type="button">»èÁ¦</button>
+      <button class="danger-button" type="button">ì‚­ì œ</button>
     `;
     row.querySelector("button").addEventListener("click", () => {
       state.customWorkdays = state.customWorkdays.filter((workday) => workday.date !== item.date);
@@ -303,9 +303,9 @@ function renderCustomWorkdayList() {
 function updateAutoHolidayPreview() {
   const range = getInputRange();
   if (!range) {
-    elements.holidayCountBadge.textContent = "0ÀÏ";
-    elements.weeklyHolidayList.innerHTML = '<div class="empty-state">±â°£À» ¸ÕÀú ¼±ÅÃÇÏ¼¼¿ä.</div>';
-    elements.nthHolidayList.innerHTML = '<div class="empty-state">±â°£À» ¸ÕÀú ¼±ÅÃÇÏ¼¼¿ä.</div>';
+    elements.holidayCountBadge.textContent = "0ì¼";
+    elements.weeklyHolidayList.innerHTML = '<div class="empty-state">ê¸°ê°„ì„ ë¨¼ì € ì„ íƒí•˜ì„¸ìš”.</div>';
+    elements.nthHolidayList.innerHTML = '<div class="empty-state">ê¸°ê°„ì„ ë¨¼ì € ì„ íƒí•˜ì„¸ìš”.</div>';
     elements.weeklyRuleSummary.textContent = "";
     elements.nthRuleSummary.textContent = "";
     return;
@@ -328,11 +328,11 @@ function updateAutoHolidayPreview() {
   });
 
   elements.weeklyRuleSummary.textContent = weeklyHolidayDays.length > 0
-    ? weeklyHolidayDays.map((day) => `¸ÅÁÖ ${dayNames[day]}`).join(", ")
-    : "¼±ÅÃµÈ ÁÖ°£ ÀÚµ¿ ÈŞ¹« ¾øÀ½";
+    ? weeklyHolidayDays.map((day) => `ë§¤ì£¼ ${dayNames[day]}`).join(", ")
+    : "ì„ íƒëœ ì£¼ê°„ ìë™ íœ´ë¬´ ì—†ìŒ";
   elements.nthRuleSummary.textContent = nthRuleResult.rules.length > 0
-    ? nthRuleResult.rules.map((rule) => `¸Å¿ù ${rule.nth}¹øÂ° ${dayNames[rule.day]}`).join(", ")
-    : "¼±ÅÃµÈ ¿ùº° ÀÚµ¿ ÈŞ¹« ¾øÀ½";
+    ? nthRuleResult.rules.map((rule) => `ë§¤ì›” ${rule.nth}ë²ˆì§¸ ${dayNames[rule.day]}`).join(", ")
+    : "ì„ íƒëœ ì›”ë³„ ìë™ íœ´ë¬´ ì—†ìŒ";
 
   const allHolidayKeys = new Set([
     ...weeklyDates.map(toDateKey),
@@ -340,7 +340,7 @@ function updateAutoHolidayPreview() {
     ...state.customHolidays.map((item) => item.date),
   ]);
 
-  elements.holidayCountBadge.textContent = `${allHolidayKeys.size}ÀÏ`;
+  elements.holidayCountBadge.textContent = `${allHolidayKeys.size}ì¼`;
   renderDatePills(elements.weeklyHolidayList, weeklyDates);
   renderDatePills(elements.nthHolidayList, nthDates);
 }
@@ -396,7 +396,7 @@ function assignExtraWorkersByPriority(scheduleMap, workDays, holidayKeys, custom
       if (currentMaxWorkers >= maxAllowedWorkers) {
         return {
           remainWork,
-          warning: remainWork > 0 ? `Ãß°¡ ±Ù¹« ${remainWork}°³´Â ¹èÄ¡ÇÏÁö ¸øÇß½À´Ï´Ù.` : "",
+          warning: remainWork > 0 ? `ì¶”ê°€ ê·¼ë¬´ ${remainWork}ê°œëŠ” ë°°ì¹˜í•˜ì§€ ëª»í–ˆìŠµë‹ˆë‹¤.` : "",
         };
       }
       currentMaxWorkers += 1;
@@ -454,29 +454,29 @@ function buildTexts(result) {
   let outputText = "";
   let statisticText = "";
 
-  statisticText += "<¹èÄ¡ ±ÔÄ¢>\n";
-  statisticText += `- ±âº» ¹èÄ¡: °¢ ±Ù¹«ÀÏ¿¡ 4¸í ¶Ç´Â Ä¿½ºÅÒ ÀÎ¿ø ¼ö¸¸Å­ ¼øÈ¯ ¹èÄ¡\n`;
-  statisticText += `- ¹èÄ¡ ¿ì¼±¼øÀ§: ${formatPriority(priorityOrder)}\n`;
-  statisticText += `- ÁÖ°£ ÀÚµ¿ ÈŞ¹«: ${weeklyHolidayDays.length > 0 ? weeklyHolidayDays.map((day) => dayNames[day]).join(", ") : "¾øÀ½"}\n`;
-  statisticText += `- ¿ùº° ÀÚµ¿ ÈŞ¹«: ${nthRules.length > 0 ? nthRules.map((rule) => `${rule.nth}¹øÂ° ${dayNames[rule.day]}`).join(", ") : "¾øÀ½"}\n`;
-  statisticText += `- Ãß°¡ ¹èÄ¡: ÈŞ¹«ÀÏ ¼ö(¹«·áÈŞÀÏ Á¦¿Ü) ¡¿ 4\n`;
+  statisticText += "<ë°°ì¹˜ ê·œì¹™>\n";
+  statisticText += `- ê¸°ë³¸ ë°°ì¹˜: ê° ê·¼ë¬´ì¼ì— 4ëª… ë˜ëŠ” ì»¤ìŠ¤í…€ ì¸ì› ìˆ˜ë§Œí¼ ìˆœí™˜ ë°°ì¹˜\n`;
+  statisticText += `- ë°°ì¹˜ ìš°ì„ ìˆœìœ„: ${formatPriority(priorityOrder)}\n`;
+  statisticText += `- ì£¼ê°„ ìë™ íœ´ë¬´: ${weeklyHolidayDays.length > 0 ? weeklyHolidayDays.map((day) => dayNames[day]).join(", ") : "ì—†ìŒ"}\n`;
+  statisticText += `- ì›”ë³„ ìë™ íœ´ë¬´: ${nthRules.length > 0 ? nthRules.map((rule) => `${rule.nth}ë²ˆì§¸ ${dayNames[rule.day]}`).join(", ") : "ì—†ìŒ"}\n`;
+  statisticText += `- ì¶”ê°€ ë°°ì¹˜: íœ´ë¬´ì¼ ìˆ˜(ë¬´ë£Œíœ´ì¼ ì œì™¸) Ã— 4\n`;
   if (warning) {
-    statisticText += `- °æ°í: ${warning}\n`;
+    statisticText += `- ê²½ê³ : ${warning}\n`;
   }
 
-  statisticText += "\n<ÀÎ¿øº° Åë°è>\n";
+  statisticText += "\n<ì¸ì›ë³„ í†µê³„>\n";
   for (const worker of workers) {
     const weekdayStats = workerDayCounts.get(worker) ?? new Map();
     const perDayText = dayNames.map((name, index) => `${name} ${weekdayStats.get(index) ?? 0}`).join(", ");
     statisticText += `- ${worker} (${workerTotals.get(worker) ?? 0}) : ${perDayText}\n`;
   }
 
-  statisticText += "\n<Á¾ÇÕ Åë°è>\n";
-  statisticText += `- ±â°£: ${formatDate(start)} ~ ${formatDate(end)}, ÃÑ ${result.totalDays}ÀÏ\n`;
-  statisticText += `- ±Ù¹«ÀÏ: ${scheduleMap.size}ÀÏ\n`;
-  statisticText += `- ÈŞ¹«ÀÏ: ${holidays.length}ÀÏ\n`;
-  statisticText += `- ÈŞ¹«ÀÏ º¸Á¤ ±Ù¹«: ${workFromHolidays}È¸\n`;
-  statisticText += `- ÃÑ ±Ù¹« ¼ö: ${totalAssignments}È¸\n`;
+  statisticText += "\n<ì¢…í•© í†µê³„>\n";
+  statisticText += `- ê¸°ê°„: ${formatDate(start)} ~ ${formatDate(end)}, ì´ ${result.totalDays}ì¼\n`;
+  statisticText += `- ê·¼ë¬´ì¼: ${scheduleMap.size}ì¼\n`;
+  statisticText += `- íœ´ë¬´ì¼: ${holidays.length}ì¼\n`;
+  statisticText += `- íœ´ë¬´ì¼ ë³´ì • ê·¼ë¬´: ${workFromHolidays}íšŒ\n`;
+  statisticText += `- ì´ ê·¼ë¬´ ìˆ˜: ${totalAssignments}íšŒ\n`;
 
   for (const day of eachDay(start, end)) {
     const key = toDateKey(day);
@@ -484,9 +484,9 @@ function buildTexts(result) {
       const workersOfDay = scheduleMap.get(key).map((entry) => `${entry.name}(${entry.count})`).join(", ");
       outputText += `${formatDate(day)} [${scheduleMap.get(key).length}] : ${workersOfDay}\n`;
     } else if (holidayKeys.has(key)) {
-      outputText += `${formatDate(day)} : ÈŞ¹«ÀÏ\n`;
+      outputText += `${formatDate(day)} : íœ´ë¬´ì¼\n`;
     } else {
-      outputText += `${formatDate(day)} : ¹Ì¹èÄ¡\n`;
+      outputText += `${formatDate(day)} : ë¯¸ë°°ì¹˜\n`;
     }
   }
 
@@ -502,7 +502,7 @@ function generateSchedule() {
 
   const workers = normalizeWorkers(elements.workersInput.value);
   if (workers.length === 0) {
-    setError("±Ù¹« ÀÎ¿øÀ» ÇÑ ¸í ÀÌ»ó ÀÔ·ÂÇØÁÖ¼¼¿ä.");
+    setError("ê·¼ë¬´ ì¸ì›ì„ í•œ ëª… ì´ìƒ ì…ë ¥í•´ì£¼ì„¸ìš”.");
     clearResults();
     return;
   }
@@ -518,7 +518,7 @@ function generateSchedule() {
   const customWorkdayMap = new Map(filteredCustomWorkdays.map((item) => [item.date, item.workerCount]));
 
   if ([...customWorkdayMap.values()].some((count) => count > workers.length)) {
-    setError("±Ù¹«ÀÚ ¼öº¸´Ù ¸¹Àº Ä¿½ºÅÒ ±Ù¹«ÀÏ ±Ù¹«ÀÚ ¼ö°¡ ÀÖ½À´Ï´Ù.");
+    setError("ê·¼ë¬´ì ìˆ˜ë³´ë‹¤ ë§ì€ ì»¤ìŠ¤í…€ ê·¼ë¬´ì¼ ê·¼ë¬´ì ìˆ˜ê°€ ìˆìŠµë‹ˆë‹¤.");
     clearResults();
     return;
   }
@@ -620,16 +620,16 @@ function renderSummary() {
   const target = elements.summaryGrid;
   target.innerHTML = "";
   if (!state.latestResult) {
-    target.innerHTML = '<div class="empty-state">½ºÄÉÁÙÀ» »ı¼ºÇÏ¸é ÇÙ½É ÁöÇ¥°¡ ¿©±â¿¡ Ç¥½ÃµË´Ï´Ù.</div>';
+    target.innerHTML = '<div class="empty-state">ìŠ¤ì¼€ì¤„ì„ ìƒì„±í•˜ë©´ í•µì‹¬ ì§€í‘œê°€ ì—¬ê¸°ì— í‘œì‹œë©ë‹ˆë‹¤.</div>';
     return;
   }
 
   const { start, end, scheduleMap, holidays, totalAssignments, workFromHolidays, priorityOrder } = state.latestResult;
   const cards = [
-    { label: "±â°£", value: `${state.latestResult.totalDays}ÀÏ`, note: `${toDateKey(start)} ~ ${toDateKey(end)}` },
-    { label: "±Ù¹«ÀÏ", value: `${scheduleMap.size}ÀÏ`, note: `${totalAssignments - workFromHolidays}È¸ ±âº» ±Ù¹«` },
-    { label: "ÈŞ¹«ÀÏ", value: `${holidays.length}ÀÏ`, note: `${workFromHolidays}È¸ Ãß°¡ ±Ù¹« È¯»ê` },
-    { label: "¿ì¼±¼øÀ§", value: formatPriority(priorityOrder), note: state.latestResult.warning || "ÇöÀç ¼³Á¤ ±âÁØ °è»ê ¿Ï·á" },
+    { label: "ê¸°ê°„", value: `${state.latestResult.totalDays}ì¼`, note: `${toDateKey(start)} ~ ${toDateKey(end)}` },
+    { label: "ê·¼ë¬´ì¼", value: `${scheduleMap.size}ì¼`, note: `${totalAssignments - workFromHolidays}íšŒ ê¸°ë³¸ ê·¼ë¬´` },
+    { label: "íœ´ë¬´ì¼", value: `${holidays.length}ì¼`, note: `${workFromHolidays}íšŒ ì¶”ê°€ ê·¼ë¬´ í™˜ì‚°` },
+    { label: "ìš°ì„ ìˆœìœ„", value: formatPriority(priorityOrder), note: state.latestResult.warning || "í˜„ì¬ ì„¤ì • ê¸°ì¤€ ê³„ì‚° ì™„ë£Œ" },
   ];
 
   for (const card of cards) {
@@ -645,7 +645,7 @@ function renderCalendar() {
   const target = elements.calendarGrid;
   target.innerHTML = "";
   if (!state.latestResult) {
-    target.innerHTML = '<div class="empty-state">Ä¶¸°´õ°¡ ¿©±â¿¡ Ç¥½ÃµË´Ï´Ù.</div>';
+    target.innerHTML = '<div class="empty-state">ìº˜ë¦°ë”ê°€ ì—¬ê¸°ì— í‘œì‹œë©ë‹ˆë‹¤.</div>';
     return;
   }
 
@@ -659,7 +659,7 @@ function renderCalendar() {
     monthCard.innerHTML = `
       <h3>${formatMonthTitle(cursor.getFullYear(), cursor.getMonth())}</h3>
       <div class="month-header">
-        <span>ÀÏ</span><span>¿ù</span><span>È­</span><span>¼ö</span><span>¸ñ</span><span>±İ</span><span>Åä</span>
+        <span>ì¼</span><span>ì›”</span><span>í™”</span><span>ìˆ˜</span><span>ëª©</span><span>ê¸ˆ</span><span>í† </span>
       </div>
       <div class="month-days"></div>
     `;
@@ -682,7 +682,7 @@ function renderCalendar() {
       const isHoliday = holidayKeys.has(key);
       const cell = document.createElement("div");
       cell.className = isInRange ? (isHoliday ? "day-cell holiday" : "day-cell workday") : "day-cell";
-      const caption = !isInRange ? "" : isHoliday ? "ÈŞ¹«" : `${entries.length}¸í`;
+      const caption = !isInRange ? "" : isHoliday ? "íœ´ë¬´" : `${entries.length}ëª…`;
       cell.innerHTML = `
         <span class="day-number">${dayNumber}</span>
         <span class="day-caption">${caption}</span>
@@ -699,7 +699,7 @@ function renderSchedule() {
   const target = elements.scheduleList;
   target.innerHTML = "";
   if (!state.latestResult) {
-    target.innerHTML = '<div class="empty-state">ÀÏÀÚº° ¹èÄ¡°¡ ¿©±â¿¡ Ç¥½ÃµË´Ï´Ù.</div>';
+    target.innerHTML = '<div class="empty-state">ì¼ìë³„ ë°°ì¹˜ê°€ ì—¬ê¸°ì— í‘œì‹œë©ë‹ˆë‹¤.</div>';
     return;
   }
 
@@ -713,14 +713,14 @@ function renderSchedule() {
     card.innerHTML = `
       <div class="schedule-top">
         <strong>${formatDate(day)}</strong>
-        <span class="schedule-status ${isHoliday ? "holiday" : "work"}">${isHoliday ? "ÈŞ¹«ÀÏ" : `${entries.length}¸í ¹èÄ¡`}</span>
+        <span class="schedule-status ${isHoliday ? "holiday" : "work"}">${isHoliday ? "íœ´ë¬´ì¼" : `${entries.length}ëª… ë°°ì¹˜`}</span>
       </div>
       <div class="worker-chip-row"></div>
     `;
 
     const row = card.querySelector(".worker-chip-row");
     if (isHoliday) {
-      row.innerHTML = '<span class="worker-chip">ÈŞ¹«</span>';
+      row.innerHTML = '<span class="worker-chip">íœ´ë¬´</span>';
     } else {
       for (const entry of entries) {
         const chip = document.createElement("span");
@@ -737,7 +737,7 @@ function renderWorkerStats() {
   const target = elements.workerStats;
   target.innerHTML = "";
   if (!state.latestResult) {
-    target.innerHTML = '<div class="empty-state">ÀÎ¿øº° Åë°è°¡ ¿©±â¿¡ Ç¥½ÃµË´Ï´Ù.</div>';
+    target.innerHTML = '<div class="empty-state">ì¸ì›ë³„ í†µê³„ê°€ ì—¬ê¸°ì— í‘œì‹œë©ë‹ˆë‹¤.</div>';
     return;
   }
 
@@ -753,7 +753,7 @@ function renderWorkerStats() {
       <div class="worker-card-top">
         <div>
           <h3>${worker}</h3>
-          <span class="subtle">ÃÑ ${total}È¸ ¹èÄ¡</span>
+          <span class="subtle">ì´ ${total}íšŒ ë°°ì¹˜</span>
         </div>
         <strong>${Math.round((total / maxAssignments) * 100)}%</strong>
       </div>
@@ -774,8 +774,8 @@ function renderWorkerStats() {
 
 function renderTextResults() {
   if (!state.latestResult) {
-    elements.outputText.textContent = "»ı¼ºµÈ ÅØ½ºÆ® Ãâ·ÂÀÌ ¾ø½À´Ï´Ù.";
-    elements.statisticText.textContent = "»ı¼ºµÈ Åë°è ÅØ½ºÆ®°¡ ¾ø½À´Ï´Ù.";
+    elements.outputText.textContent = "ìƒì„±ëœ í…ìŠ¤íŠ¸ ì¶œë ¥ì´ ì—†ìŠµë‹ˆë‹¤.";
+    elements.statisticText.textContent = "ìƒì„±ëœ í†µê³„ í…ìŠ¤íŠ¸ê°€ ì—†ìŠµë‹ˆë‹¤.";
     return;
   }
   elements.outputText.textContent = state.latestResult.outputText;
@@ -830,8 +830,8 @@ function loadSampleData() {
   elements.startDate.value = toDateKey(start);
   elements.endDate.value = toDateKey(end);
   elements.workersInput.value = "AAA BBB CCC DDD EEE FFF";
-  elements.priorityInput.value = "Åä,ÀÏ,¿ù,±İ,È­,¸ñ,¼ö";
-  elements.nthRulesInput.value = "2 ¸ñ\n4 ¸ñ";
+  elements.priorityInput.value = "í† ,ì¼,ì›”,ê¸ˆ,í™”,ëª©,ìˆ˜";
+  elements.nthRulesInput.value = "2 ëª©\n4 ëª©";
   state.customHolidays = [];
   state.customWorkdays = [];
   buildWeeklyHolidayChecks();
@@ -869,7 +869,7 @@ elements.loadSampleBtn.addEventListener("click", () => loadSampleData());
 
 elements.addHolidayBtn.addEventListener("click", () => {
   if (!elements.holidayDateInput.value) {
-    setError("Ä¿½ºÅÒ ÈŞ¹«ÀÏ ³¯Â¥¸¦ ¼±ÅÃÇØÁÖ¼¼¿ä.");
+    setError("ì»¤ìŠ¤í…€ íœ´ë¬´ì¼ ë‚ ì§œë¥¼ ì„ íƒí•´ì£¼ì„¸ìš”.");
     return;
   }
   upsertHoliday(elements.holidayDateInput.value, elements.holidayFreeInput.checked);
@@ -882,11 +882,11 @@ elements.addHolidayBtn.addEventListener("click", () => {
 elements.addWorkdayBtn.addEventListener("click", () => {
   const count = Number(elements.workdayCountInput.value);
   if (!elements.workdayDateInput.value) {
-    setError("Ä¿½ºÅÒ ±Ù¹«ÀÏ ³¯Â¥¸¦ ¼±ÅÃÇØÁÖ¼¼¿ä.");
+    setError("ì»¤ìŠ¤í…€ ê·¼ë¬´ì¼ ë‚ ì§œë¥¼ ì„ íƒí•´ì£¼ì„¸ìš”.");
     return;
   }
   if (!Number.isInteger(count) || count <= 0) {
-    setError("±Ù¹«ÀÚ ¼ö´Â 1 ÀÌ»óÀÇ Á¤¼ö¿©¾ß ÇÕ´Ï´Ù.");
+    setError("ê·¼ë¬´ì ìˆ˜ëŠ” 1 ì´ìƒì˜ ì •ìˆ˜ì—¬ì•¼ í•©ë‹ˆë‹¤.");
     return;
   }
   upsertWorkday(elements.workdayDateInput.value, count);
