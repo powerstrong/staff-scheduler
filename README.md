@@ -27,3 +27,7 @@
 ## 배포
 
 이 저장소는 GitHub Actions로 GitHub Pages에 배포되도록 설정되어 있습니다.
+
+배포 페이지:
+
+- https://powerstrong.github.io/staff-scheduler/
