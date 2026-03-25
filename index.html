@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WooriHome Scheduler Web</title>
+  <title>�ٹ� ������ �ڵ� ��ġ</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -11,163 +11,193 @@
 </head>
 <body>
   <div class="page-shell">
-    <header class="hero">
+    <header class="hero compact-hero">
       <div class="hero-copy">
-        <p class="eyebrow">WOORIHOME SCHEDULER</p>
-        <h1>WPF 스케줄러를 GitHub Pages용 웹앱으로 포팅</h1>
+        <p class="eyebrow">AUTO STAFF SCHEDULER</p>
+        <h1>�ٹ��Ⱓ�� �޹� ��Ģ�� �Է��ϸ� �ڵ����� �ٹ��ڸ� ��ġ�մϴ�</h1>
         <p class="hero-text">
-          기존 우리홈치과 스케줄링 규칙을 그대로 유지하면서, 결과는 텍스트 대신 카드형 일정표와 통계 대시보드로 보여줍니다.
+          �ٹ��Ⱓ, �ٹ���, �޹���, �켱����, �ڵ� �޹� ��Ģ�� �Է��ϸ� �־��� ���ǿ� ���� �ٹ�ǥ�� �ڵ� �����ϰ� �ؽ�Ʈ�� �ð�ȭ �� ������� Ȯ���� �� �ֽ��ϴ�.
         </p>
       </div>
-      <div class="hero-glass">
+      <div class="hero-glass hero-glass-mini">
         <div class="hero-stat">
-          <span class="label">배치 우선순위</span>
-          <strong>토 → 일 → 월 → 금 → 화 → 목 → 수</strong>
+          <span class="label">���� ����</span>
+          <strong>��ġ �켱���� / �ڵ� �޹� / Ŀ���� �޹� / Ŀ���� �ٹ���</strong>
         </div>
         <div class="hero-stat">
-          <span class="label">자동 휴무</span>
-          <strong>매주 수요일 / 2, 4번째 목요일</strong>
-        </div>
-        <div class="hero-stat">
-          <span class="label">배포 방식</span>
-          <strong>정적 사이트 + GitHub Pages</strong>
+          <span class="label">��� ����</span>
+          <strong>�ؽ�Ʈ�� ���� / �ð�ȭ�ؼ� ����</strong>
         </div>
       </div>
     </header>
 
-    <main class="layout">
-      <aside class="controls panel">
-        <section class="panel-section">
+    <main class="layout compact-layout">
+      <aside class="controls panel compact-controls">
+        <section class="panel-section compact-section">
           <div class="section-title-row">
-            <h2>입력</h2>
-            <button id="loadSampleBtn" class="ghost-button" type="button">샘플 채우기</button>
+            <h2>�Է�</h2>
+            <button id="loadSampleBtn" class="ghost-button" type="button">���� ä���</button>
           </div>
 
-          <div class="field-grid">
+          <div class="field-grid two-up">
             <label class="field">
-              <span>시작일</span>
+              <span>������</span>
               <input id="startDate" type="date">
             </label>
             <label class="field">
-              <span>종료일</span>
+              <span>������</span>
               <input id="endDate" type="date">
             </label>
           </div>
 
           <label class="field">
-            <span>근무 인원</span>
-            <textarea id="workersInput" rows="3" placeholder="공백 또는 줄바꿈으로 구분해서 입력"></textarea>
+            <span>�ٹ� �ο�</span>
+            <textarea id="workersInput" rows="3" placeholder="���� �Ǵ� �ٹٲ����� ����"></textarea>
           </label>
 
-          <button id="generateBtn" class="primary-button" type="button">스케줄 생성</button>
+          <label class="field">
+            <span>��ġ �켱����</span>
+            <input id="priorityInput" type="text" placeholder="��: ��,��,��,��,ȭ,��,��">
+          </label>
+
+          <label class="field">
+            <span>���� �ڵ� �޹� ����</span>
+            <div id="weeklyHolidayChecks" class="weekday-checks compact-checks"></div>
+          </label>
+
+          <label class="field">
+            <span>���� �ڵ� �޹� ��Ģ</span>
+            <textarea id="nthRulesInput" rows="2" placeholder="�� �ٿ� �ϳ��� �Է�&#10;��: 2 ��&#10;4 ��"></textarea>
+          </label>
+
+          <button id="generateBtn" class="primary-button" type="button">������ ����</button>
           <p id="errorText" class="error-text" aria-live="polite"></p>
         </section>
 
-        <section class="panel-section">
+        <section class="panel-section compact-section">
           <div class="section-title-row">
-            <h2>자동 휴무일</h2>
-            <span id="holidayCountBadge" class="badge">0일</span>
+            <h2>�ڵ� �޹� �̸�����</h2>
+            <span id="holidayCountBadge" class="badge">0��</span>
           </div>
-          <div class="auto-holiday-grid">
+          <div class="auto-holiday-grid compact-auto-grid">
             <div class="auto-card">
-              <h3>매주 수요일</h3>
-              <div id="wednesdayList" class="date-list"></div>
+              <h3>�ְ� ��Ģ</h3>
+              <div id="weeklyRuleSummary" class="mini-summary"></div>
+              <div id="weeklyHolidayList" class="date-list compact-date-list"></div>
             </div>
             <div class="auto-card">
-              <h3>2번째 / 4번째 목요일</h3>
-              <div id="thursdayList" class="date-list"></div>
+              <h3>���� ��Ģ</h3>
+              <div id="nthRuleSummary" class="mini-summary"></div>
+              <div id="nthHolidayList" class="date-list compact-date-list"></div>
             </div>
           </div>
         </section>
 
-        <section class="panel-section">
+        <section class="panel-section compact-section">
           <div class="section-title-row">
-            <h2>커스텀 휴무일</h2>
-            <span class="subtle">무료휴일 체크 가능</span>
+            <h2>Ŀ���� �޹���</h2>
+            <span class="subtle">�������� üũ ����</span>
           </div>
-          <div class="inline-form">
+          <div class="inline-form compact-inline-form">
             <label class="field compact">
-              <span>날짜</span>
+              <span>��¥</span>
               <input id="holidayDateInput" type="date">
             </label>
-            <label class="checkbox-field">
+            <label class="checkbox-field compact-checkbox">
               <input id="holidayFreeInput" type="checkbox">
-              <span>신난다 무료휴일</span>
+              <span>��������</span>
             </label>
-            <button id="addHolidayBtn" class="secondary-button" type="button">추가</button>
+            <button id="addHolidayBtn" class="secondary-button" type="button">�߰�</button>
           </div>
-          <div id="customHolidayList" class="entry-list"></div>
+          <div id="customHolidayList" class="entry-list compact-entry-list"></div>
         </section>
 
-        <section class="panel-section">
+        <section class="panel-section compact-section">
           <div class="section-title-row">
-            <h2>커스텀 근무일</h2>
-            <span class="subtle">휴무일보다 우선 적용</span>
+            <h2>Ŀ���� �ٹ���</h2>
+            <span class="subtle">�޹��Ϻ��� �켱</span>
           </div>
-          <div class="inline-form">
+          <div class="inline-form compact-inline-form workday-form">
             <label class="field compact">
-              <span>날짜</span>
+              <span>��¥</span>
               <input id="workdayDateInput" type="date">
             </label>
             <label class="field compact count-field">
-              <span>근무자 수</span>
+              <span>�ٹ��� ��</span>
               <input id="workdayCountInput" type="number" min="1" step="1" value="4">
             </label>
-            <button id="addWorkdayBtn" class="secondary-button" type="button">추가</button>
+            <button id="addWorkdayBtn" class="secondary-button" type="button">�߰�</button>
           </div>
-          <div id="customWorkdayList" class="entry-list"></div>
+          <div id="customWorkdayList" class="entry-list compact-entry-list"></div>
         </section>
       </aside>
 
       <section class="results">
-        <div class="summary-grid" id="summaryGrid"></div>
+        <div class="summary-grid compact-summary-grid" id="summaryGrid"></div>
 
-        <div class="result-panels">
-          <section class="panel result-panel">
-            <div class="section-title-row">
-              <h2>월간 캘린더</h2>
-              <span class="subtle">휴무일과 배치 인원을 한 번에 확인</span>
+        <section class="panel result-panel compact-result-panel">
+          <div class="section-title-row">
+            <h2>���</h2>
+            <div class="tab-switcher" id="resultTabs">
+              <button type="button" class="tab-button active" data-tab="visual">�ð�ȭ�ؼ� ����</button>
+              <button type="button" class="tab-button" data-tab="text">�ؽ�Ʈ�� ����</button>
             </div>
-            <div id="calendarGrid" class="calendar-grid"></div>
-          </section>
+          </div>
 
-          <section class="panel result-panel">
-            <div class="section-title-row">
-              <h2>일자별 배치</h2>
-              <span class="subtle">기존 output의 시각화 버전</span>
-            </div>
-            <div id="scheduleList" class="schedule-list"></div>
-          </section>
+          <div id="visualTab" class="tab-panel active">
+            <div class="visual-grid">
+              <section class="sub-panel compact-sub-panel">
+                <div class="section-title-row small-title-row">
+                  <h3>���� Ķ����</h3>
+                  <span class="subtle">�ݳ�ġ�� �Ѵ��� ���� ���� ����</span>
+                </div>
+                <div id="calendarGrid" class="calendar-grid compact-calendar-grid"></div>
+              </section>
 
-          <section class="panel result-panel">
-            <div class="section-title-row">
-              <h2>인원별 통계</h2>
-              <span class="subtle">기존 statistics의 시각화 버전</span>
-            </div>
-            <div id="workerStats" class="worker-stats"></div>
-          </section>
+              <section class="sub-panel compact-sub-panel">
+                <div class="section-title-row small-title-row">
+                  <h3>���ں� ��ġ</h3>
+                  <span class="subtle">�Ϸ纰 �ο� Ȯ��</span>
+                </div>
+                <div id="scheduleList" class="schedule-list compact-schedule-list"></div>
+              </section>
 
-          <section class="panel result-panel">
-            <div class="section-title-row">
-              <h2>배치 규칙</h2>
-              <span class="subtle">WPF 알고리즘을 그대로 설명</span>
+              <section class="sub-panel compact-sub-panel">
+                <div class="section-title-row small-title-row">
+                  <h3>�ο��� ���</h3>
+                  <span class="subtle">���� ������ �� �ٹ� ��</span>
+                </div>
+                <div id="workerStats" class="worker-stats compact-worker-stats"></div>
+              </section>
             </div>
-            <div class="algorithm-card">
-              <ol>
-                <li>기본 배치: 각 근무일에 4명 또는 커스텀 인원 수만큼 순환 배치합니다.</li>
-                <li>근무일 우선순위: 토, 일, 월, 금, 화, 목, 수 순서로 먼저 자리를 채웁니다.</li>
-                <li>추가 배치: 공짜 휴일과 수요일을 제외한 휴무일 수 × 4 만큼 추가 근무를 넣습니다.</li>
-                <li>추가 근무자는 해당 날짜에 아직 배치되지 않은 사람 중 누적 근무가 가장 적은 사람을 우선 선택합니다.</li>
-              </ol>
+          </div>
+
+          <div id="textTab" class="tab-panel">
+            <div class="text-grid">
+              <section class="sub-panel compact-sub-panel">
+                <div class="section-title-row small-title-row">
+                  <h3>�ؽ�Ʈ ���</h3>
+                  <span class="subtle">���� �͹̳� ��Ÿ��</span>
+                </div>
+                <pre id="outputText" class="text-output"></pre>
+              </section>
+
+              <section class="sub-panel compact-sub-panel">
+                <div class="section-title-row small-title-row">
+                  <h3>��� �ؽ�Ʈ</h3>
+                  <span class="subtle">�˰����� ������ ���</span>
+                </div>
+                <pre id="statisticText" class="text-output"></pre>
+              </section>
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
       </section>
     </main>
   </div>
 
   <template id="summaryCardTemplate">
-    <article class="summary-card">
+    <article class="summary-card compact-summary-card">
       <p class="summary-label"></p>
       <strong class="summary-value"></strong>
       <span class="summary-note"></span>
