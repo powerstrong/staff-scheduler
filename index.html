@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WooriHome Scheduler Web</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">WOORIHOME SCHEDULER</p>
+        <h1>WPF 스케줄러를 GitHub Pages용 웹앱으로 포팅</h1>
+        <p class="hero-text">
+          기존 우리홈치과 스케줄링 규칙을 그대로 유지하면서, 결과는 텍스트 대신 카드형 일정표와 통계 대시보드로 보여줍니다.
+        </p>
+      </div>
+      <div class="hero-glass">
+        <div class="hero-stat">
+          <span class="label">배치 우선순위</span>
+          <strong>토 → 일 → 월 → 금 → 화 → 목 → 수</strong>
+        </div>
+        <div class="hero-stat">
+          <span class="label">자동 휴무</span>
+          <strong>매주 수요일 / 2, 4번째 목요일</strong>
+        </div>
+        <div class="hero-stat">
+          <span class="label">배포 방식</span>
+          <strong>정적 사이트 + GitHub Pages</strong>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="controls panel">
+        <section class="panel-section">
+          <div class="section-title-row">
+            <h2>입력</h2>
+            <button id="loadSampleBtn" class="ghost-button" type="button">샘플 채우기</button>
+          </div>
+
+          <div class="field-grid">
+            <label class="field">
+              <span>시작일</span>
+              <input id="startDate" type="date">
+            </label>
+            <label class="field">
+              <span>종료일</span>
+              <input id="endDate" type="date">
+            </label>
+          </div>
+
+          <label class="field">
+            <span>근무 인원</span>
+            <textarea id="workersInput" rows="3" placeholder="공백 또는 줄바꿈으로 구분해서 입력"></textarea>
+          </label>
+
+          <button id="generateBtn" class="primary-button" type="button">스케줄 생성</button>
+          <p id="errorText" class="error-text" aria-live="polite"></p>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title-row">
+            <h2>자동 휴무일</h2>
+            <span id="holidayCountBadge" class="badge">0일</span>
+          </div>
+          <div class="auto-holiday-grid">
+            <div class="auto-card">
+              <h3>매주 수요일</h3>
+              <div id="wednesdayList" class="date-list"></div>
+            </div>
+            <div class="auto-card">
+              <h3>2번째 / 4번째 목요일</h3>
+              <div id="thursdayList" class="date-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title-row">
+            <h2>커스텀 휴무일</h2>
+            <span class="subtle">무료휴일 체크 가능</span>
+          </div>
+          <div class="inline-form">
+            <label class="field compact">
+              <span>날짜</span>
+              <input id="holidayDateInput" type="date">
+            </label>
+            <label class="checkbox-field">
+              <input id="holidayFreeInput" type="checkbox">
+              <span>신난다 무료휴일</span>
+            </label>
+            <button id="addHolidayBtn" class="secondary-button" type="button">추가</button>
+          </div>
+          <div id="customHolidayList" class="entry-list"></div>
+        </section>
+
+        <section class="panel-section">
+          <div class="section-title-row">
+            <h2>커스텀 근무일</h2>
+            <span class="subtle">휴무일보다 우선 적용</span>
+          </div>
+          <div class="inline-form">
+            <label class="field compact">
+              <span>날짜</span>
+              <input id="workdayDateInput" type="date">
+            </label>
+            <label class="field compact count-field">
+              <span>근무자 수</span>
+              <input id="workdayCountInput" type="number" min="1" step="1" value="4">
+            </label>
+            <button id="addWorkdayBtn" class="secondary-button" type="button">추가</button>
+          </div>
+          <div id="customWorkdayList" class="entry-list"></div>
+        </section>
+      </aside>
+
+      <section class="results">
+        <div class="summary-grid" id="summaryGrid"></div>
+
+        <div class="result-panels">
+          <section class="panel result-panel">
+            <div class="section-title-row">
+              <h2>월간 캘린더</h2>
+              <span class="subtle">휴무일과 배치 인원을 한 번에 확인</span>
+            </div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+          </section>
+
+          <section class="panel result-panel">
+            <div class="section-title-row">
+              <h2>일자별 배치</h2>
+              <span class="subtle">기존 output의 시각화 버전</span>
+            </div>
+            <div id="scheduleList" class="schedule-list"></div>
+          </section>
+
+          <section class="panel result-panel">
+            <div class="section-title-row">
+              <h2>인원별 통계</h2>
+              <span class="subtle">기존 statistics의 시각화 버전</span>
+            </div>
+            <div id="workerStats" class="worker-stats"></div>
+          </section>
+
+          <section class="panel result-panel">
+            <div class="section-title-row">
+              <h2>배치 규칙</h2>
+              <span class="subtle">WPF 알고리즘을 그대로 설명</span>
+            </div>
+            <div class="algorithm-card">
+              <ol>
+                <li>기본 배치: 각 근무일에 4명 또는 커스텀 인원 수만큼 순환 배치합니다.</li>
+                <li>근무일 우선순위: 토, 일, 월, 금, 화, 목, 수 순서로 먼저 자리를 채웁니다.</li>
+                <li>추가 배치: 공짜 휴일과 수요일을 제외한 휴무일 수 × 4 만큼 추가 근무를 넣습니다.</li>
+                <li>추가 근무자는 해당 날짜에 아직 배치되지 않은 사람 중 누적 근무가 가장 적은 사람을 우선 선택합니다.</li>
+              </ol>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <template id="summaryCardTemplate">
+    <article class="summary-card">
+      <p class="summary-label"></p>
+      <strong class="summary-value"></strong>
+      <span class="summary-note"></span>
+    </article>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>
