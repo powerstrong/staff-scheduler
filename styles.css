@@ -640,6 +640,72 @@ textarea {
   white-space: pre-wrap;
 }
 
+.text-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mini-button {
+  padding: 7px 10px;
+  font-size: 0.76rem;
+}
+
+.rich-text-output {
+  color: #433326;
+}
+
+.rich-text-output .section-line {
+  display: block;
+  margin: 10px 0 6px;
+  color: #1f6f5d;
+  font-weight: 700;
+}
+
+.rich-text-output .date-line {
+  display: block;
+  color: #4d3e31;
+}
+
+.rich-text-output .date-part {
+  color: #1f6f5d;
+  font-weight: 700;
+}
+
+.rich-text-output .value-part {
+  color: #5a493b;
+}
+
+.rich-text-output .holiday-line {
+  color: #b45722;
+}
+
+.rich-text-output .summary-line {
+  display: block;
+  color: #705f50;
+}
+
+.rich-text-output .stat-line {
+  display: block;
+  color: #5b4c3f;
+}
+
+.rich-text-output .label-part {
+  color: #d4682c;
+  font-weight: 700;
+}
+
+.rich-text-output .name-part {
+  color: #1f6f5d;
+  font-weight: 700;
+}
+
+.rich-text-output .warning-line {
+  display: block;
+  color: #b0372f;
+  font-weight: 600;
+}
+
 .empty-state {
   padding: 16px;
   border-radius: 14px;

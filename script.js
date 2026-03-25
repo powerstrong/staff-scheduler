@@ -65,6 +65,8 @@ const elements = {
   workerStats: document.querySelector("#workerStats"),
   outputText: document.querySelector("#outputText"),
   statisticText: document.querySelector("#statisticText"),
+  copyOutputBtn: document.querySelector("#copyOutputBtn"),
+  copyStatsBtn: document.querySelector("#copyStatsBtn"),
   summaryCardTemplate: document.querySelector("#summaryCardTemplate"),
   resultTabs: document.querySelector("#resultTabs"),
   visualTab: document.querySelector("#visualTab"),
@@ -584,6 +586,61 @@ function clearResults() {
   renderResults();
 }
 
+function escapeHtml(value) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function formatOutputHtml(text) {
+  return text
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      const [left, right = ""] = line.split(" : ");
+      const isHoliday = right.includes("휴무일");
+      const lineClass = isHoliday ? "date-line holiday-line" : "date-line";
+      const leftHtml = `<span class="date-part">${escapeHtml(left)}</span>`;
+      const rightHtml = right ? `<span class="value-part">${escapeHtml(` : ${right}`)}</span>` : "";
+      return `<span class="${lineClass}">${leftHtml}${rightHtml}</span>`;
+    })
+    .join("");
+}
+
+function formatStatsHtml(text) {
+  return text
+    .split("\n")
+    .map((line) => {
+      if (!line.trim()) {
+        return "<br>";
+      }
+      if (line.startsWith("<") && line.endsWith(">")) {
+        return `<span class="section-line">${escapeHtml(line)}</span>`;
+      }
+      if (line.startsWith("- 경고:")) {
+        const [label, ...rest] = line.split(":");
+        return `<span class="warning-line"><span class="label-part">${escapeHtml(`${label}:`)}</span>${escapeHtml(rest.join(":"))}</span>`;
+      }
+      if (line.startsWith("- 기간:") || line.startsWith("- 근무일:") || line.startsWith("- 휴무일:") || line.startsWith("- 휴무일 보정 근무:") || line.startsWith("- 총 근무 수:")) {
+        const [label, ...rest] = line.split(":");
+        return `<span class="summary-line"><span class="label-part">${escapeHtml(`${label}:`)}</span>${escapeHtml(rest.join(":"))}</span>`;
+      }
+      if (line.startsWith("- ")) {
+        const workerMatch = line.match(/^-\s(.+?\(\d+\))\s:\s(.+)$/);
+        if (workerMatch) {
+          return `<span class="stat-line"><span class="name-part">${escapeHtml(workerMatch[1])}</span><span class="label-part"> :</span> ${escapeHtml(workerMatch[2])}</span>`;
+        }
+        const [label, ...rest] = line.split(":");
+        if (rest.length > 0) {
+          return `<span class="stat-line"><span class="label-part">${escapeHtml(`${label}:`)}</span>${escapeHtml(rest.join(":"))}</span>`;
+        }
+      }
+      return `<span class="stat-line">${escapeHtml(line)}</span>`;
+    })
+    .join("");
+}
+
 function renderSummary() {
   const target = elements.summaryGrid;
   target.innerHTML = "";
@@ -746,8 +803,8 @@ function renderTextResults() {
     elements.statisticText.textContent = "생성된 통계 텍스트가 없습니다.";
     return;
   }
-  elements.outputText.textContent = state.latestResult.outputText;
-  elements.statisticText.textContent = state.latestResult.statisticText;
+  elements.outputText.innerHTML = formatOutputHtml(state.latestResult.outputText);
+  elements.statisticText.innerHTML = formatStatsHtml(state.latestResult.statisticText);
 }
 
 function renderResults() {
@@ -970,6 +1027,30 @@ elements.addWorkdayBtn.addEventListener("click", () => {
   elements.workdayCountInput.value = "4";
   renderEntryLists();
   generateSchedule();
+});
+
+elements.copyOutputBtn.addEventListener("click", async () => {
+  const text = state.latestResult?.outputText ?? "";
+  if (!text) {
+    return;
+  }
+  await navigator.clipboard.writeText(text);
+  elements.copyOutputBtn.textContent = "복사됨";
+  setTimeout(() => {
+    elements.copyOutputBtn.textContent = "텍스트 복사";
+  }, 1200);
+});
+
+elements.copyStatsBtn.addEventListener("click", async () => {
+  const text = state.latestResult?.statisticText ?? "";
+  if (!text) {
+    return;
+  }
+  await navigator.clipboard.writeText(text);
+  elements.copyStatsBtn.textContent = "복사됨";
+  setTimeout(() => {
+    elements.copyStatsBtn.textContent = "텍스트 복사";
+  }, 1200);
 });
 
 elements.resultTabs.addEventListener("click", (event) => {

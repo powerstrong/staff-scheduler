@@ -181,17 +181,23 @@
               <section class="sub-panel compact-sub-panel">
                 <div class="section-title-row small-title-row">
                   <h3>텍스트 출력</h3>
-                  <span class="subtle">기존 터미널 스타일</span>
+                  <div class="text-actions">
+                    <span class="subtle">기존 터미널 스타일</span>
+                    <button id="copyOutputBtn" class="ghost-button mini-button" type="button">텍스트 복사</button>
+                  </div>
                 </div>
-                <pre id="outputText" class="text-output"></pre>
+                <pre id="outputText" class="text-output rich-text-output"></pre>
               </section>
 
               <section class="sub-panel compact-sub-panel">
                 <div class="section-title-row small-title-row">
                   <h3>통계 텍스트</h3>
-                  <span class="subtle">알고리즘 설명과 요약</span>
+                  <div class="text-actions">
+                    <span class="subtle">알고리즘 설명과 요약</span>
+                    <button id="copyStatsBtn" class="ghost-button mini-button" type="button">텍스트 복사</button>
+                  </div>
                 </div>
-                <pre id="statisticText" class="text-output"></pre>
+                <pre id="statisticText" class="text-output rich-text-output"></pre>
               </section>
             </div>
           </div>
