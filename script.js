@@ -454,7 +454,7 @@ function generate(start, end, workers, holidays, customWorkdays, freeHolidayCoun
   }
 
   const nonWeeklyHolidayKeys = holidays.filter((day) => !weeklyHolidaySet.has(day.getDay()));
-  let remainWork = (nonWeeklyHolidayKeys.length - freeHolidayCount) * baseDailyCount;
+  let remainWork = Math.max(0, nonWeeklyHolidayKeys.length - freeHolidayCount) * baseDailyCount;
   let warning = "";
 
   if (remainWork > 0) {
@@ -570,7 +570,15 @@ function generateSchedule() {
     }
   }
 
-  const freeHolidayCount = filteredCustomHolidays.filter((item) => item.isFree).length;
+  const finalHolidayKeys = new Set(holidays.map(toDateKey));
+  const weeklyHolidaySetEarly = new Set(weeklyHolidayDays);
+  const freeHolidayCount = filteredCustomHolidays.filter((item) => {
+    if (!item.isFree) return false;
+    if (!finalHolidayKeys.has(item.date)) return false;
+    const day = dateFromInput(item.date);
+    if (weeklyHolidaySetEarly.has(day.getDay())) return false;
+    return true;
+  }).length;
   const { scheduleMap, warning, remainingExtraAssignments } = generate(
     range.start,
     range.end,
@@ -724,15 +732,21 @@ function renderSummary() {
   const maxAssign = totals.length > 0 ? Math.max(...totals) : 0;
   const minAssign = totals.length > 0 ? Math.min(...totals) : 0;
   const diff = maxAssign - minAssign;
+  const avgAssign = totals.length > 0 ? totalAssignments / totals.length : 0;
+  const ratio = avgAssign > 0 ? diff / avgAssign : 0;
   let balanceLabel;
   let balanceTone;
   if (totalAssignments === 0) {
     balanceLabel = "데이터 없음";
     balanceTone = "balance-neutral";
-  } else if (diff <= 1) {
+  } else if (avgAssign < 5) {
+    if (diff <= 1) { balanceLabel = "매우 균등"; balanceTone = "balance-good"; }
+    else if (diff <= 2) { balanceLabel = "양호"; balanceTone = "balance-ok"; }
+    else { balanceLabel = "확인 필요"; balanceTone = "balance-warn"; }
+  } else if (ratio <= 0.05) {
     balanceLabel = "매우 균등";
     balanceTone = "balance-good";
-  } else if (diff <= 3) {
+  } else if (ratio <= 0.15) {
     balanceLabel = "양호";
     balanceTone = "balance-ok";
   } else {
@@ -748,9 +762,11 @@ function renderSummary() {
       label: "균형 상태",
       value: balanceLabel,
       note: totalAssignments > 0
-        ? `최대 ${maxAssign}회 · 최소 ${minAssign}회 · 차이 ${diff}회`
+        ? (state.latestResult.warning
+          ? `${state.latestResult.warning} · 평균 ${avgAssign.toFixed(1)}회 · 차이 ${diff}회`
+          : `최대 ${maxAssign}회 · 최소 ${minAssign}회 · 차이 ${diff}회 (평균 ${avgAssign.toFixed(1)}회)`)
         : (state.latestResult.warning || "근무자가 배치되면 표시됩니다."),
-      tone: balanceTone,
+      tone: state.latestResult.warning && totalAssignments > 0 ? "balance-warn" : balanceTone,
     },
   ];
 
@@ -919,10 +935,36 @@ function renderResults() {
 function setActiveTab(tab) {
   state.activeTab = tab;
   for (const button of elements.resultTabs.querySelectorAll(".tab-button")) {
-    button.classList.toggle("active", button.dataset.tab === tab);
+    const isActive = button.dataset.tab === tab;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+    button.setAttribute("tabindex", isActive ? "0" : "-1");
   }
   elements.visualTab.classList.toggle("active", tab === "visual");
   elements.textTab.classList.toggle("active", tab === "text");
+  elements.visualTab.toggleAttribute("hidden", tab !== "visual");
+  elements.textTab.toggleAttribute("hidden", tab !== "text");
+}
+
+function handleResultTabKey(event) {
+  const buttons = [...elements.resultTabs.querySelectorAll(".tab-button")];
+  const currentIndex = buttons.findIndex((btn) => btn === document.activeElement);
+  if (currentIndex < 0) return;
+  let nextIndex = currentIndex;
+  if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+    nextIndex = (currentIndex + 1) % buttons.length;
+  } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+    nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+  } else if (event.key === "Home") {
+    nextIndex = 0;
+  } else if (event.key === "End") {
+    nextIndex = buttons.length - 1;
+  } else {
+    return;
+  }
+  event.preventDefault();
+  buttons[nextIndex].focus();
+  setActiveTab(buttons[nextIndex].dataset.tab);
 }
 
 function syncDates() {
@@ -1057,6 +1099,9 @@ function createNthRuleRow(rule = { nth: 2, day: 4 }) {
 
 function renderNthRuleEditor(rules = defaultNthRules) {
   elements.nthRulesList.innerHTML = "";
+  if (!Array.isArray(rules) || rules.length === 0) {
+    return;
+  }
   for (const rule of rules) {
     elements.nthRulesList.appendChild(createNthRuleRow(rule));
   }
@@ -1107,19 +1152,28 @@ function applySettings(settings) {
     if (Number.isInteger(dailyCount) && dailyCount > 0) {
       elements.dailyCountInput.value = String(dailyCount);
     }
-    const weeklyHolidayDays = Array.isArray(settings.weeklyHolidayDays) ? settings.weeklyHolidayDays : defaultWeeklyHolidayDays;
+    const weeklyHolidayDays = Array.isArray(settings.weeklyHolidayDays)
+      ? settings.weeklyHolidayDays.filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)
+      : defaultWeeklyHolidayDays;
     buildWeeklyHolidayChecks(weeklyHolidayDays);
-    const priorityOrder = Array.isArray(settings.priorityOrder) && settings.priorityOrder.length === 7
-      ? settings.priorityOrder
-      : defaultPriority;
-    renderPriorityEditor(priorityOrder);
-    const nthRules = Array.isArray(settings.nthRules) && settings.nthRules.length > 0 ? settings.nthRules : defaultNthRules;
+    const validPriority = Array.isArray(settings.priorityOrder)
+      && settings.priorityOrder.length === 7
+      && new Set(settings.priorityOrder).size === 7
+      && settings.priorityOrder.every((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+    renderPriorityEditor(validPriority ? settings.priorityOrder : defaultPriority);
+    const nthRules = Array.isArray(settings.nthRules)
+      ? settings.nthRules.filter((rule) => rule && Number.isInteger(rule.nth) && rule.nth >= 1 && rule.nth <= 5 && Number.isInteger(rule.day) && rule.day >= 0 && rule.day <= 6)
+      : defaultNthRules;
     renderNthRuleEditor(nthRules);
     state.customHolidays = Array.isArray(settings.customHolidays)
       ? settings.customHolidays.filter((item) => item && typeof item.date === "string").map((item) => ({ date: item.date, isFree: Boolean(item.isFree) }))
       : [];
     state.customWorkdays = Array.isArray(settings.customWorkdays)
-      ? settings.customWorkdays.filter((item) => item && typeof item.date === "string" && Number.isInteger(Number(item.workerCount))).map((item) => ({ date: item.date, workerCount: Number(item.workerCount) }))
+      ? settings.customWorkdays.filter((item) => {
+          if (!item || typeof item.date !== "string") return false;
+          const wc = Number(item.workerCount);
+          return Number.isInteger(wc) && wc > 0;
+        }).map((item) => ({ date: item.date, workerCount: Number(item.workerCount) }))
       : [];
     state.customHolidays.sort((a, b) => a.date.localeCompare(b.date));
     state.customWorkdays.sort((a, b) => a.date.localeCompare(b.date));
@@ -1184,7 +1238,7 @@ function downloadScheduleCsv() {
     ]);
   }
   const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\r\n");
-  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+  const blob = new Blob(["﻿", csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -1320,6 +1374,7 @@ elements.resultTabs.addEventListener("click", (event) => {
   }
   setActiveTab(button.dataset.tab);
 });
+elements.resultTabs.addEventListener("keydown", handleResultTabKey);
 
 (function init() {
   setActiveTab("visual");

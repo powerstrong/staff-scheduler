@@ -52,17 +52,17 @@
 
           <label class="field">
             <span>기본 하루 근무 인원</span>
-            <input id="dailyCountInput" type="number" min="1" step="1" value="4">
-            <small class="field-hint">치과 주 6일 근무는 보통 하루 4명입니다. 성수기·특수일은 아래 예외 설정에서 조정하세요.</small>
+            <input id="dailyCountInput" type="number" min="1" step="1" value="4" aria-describedby="dailyCountHint">
+            <small id="dailyCountHint" class="field-hint">치과 주 6일 근무는 보통 하루 4명입니다. 성수기·특수일은 아래 예외 설정에서 조정하세요.</small>
           </label>
 
           <label class="field">
             <span class="field-label-row">
               <span>근무 인원</span>
-              <span id="workerCountBadge" class="badge soft-badge">0명</span>
+              <span id="workerCountBadge" class="badge soft-badge" aria-live="polite">0명</span>
             </span>
             <textarea id="workersInput" rows="3" placeholder="예: 김민지 박서연 이지훈 최유리&#10;공백 또는 줄바꿈으로 구분"></textarea>
-            <div id="workerChipPreview" class="chip-preview"></div>
+            <div id="workerChipPreview" class="chip-preview" role="status" aria-live="polite" aria-label="근무자 미리보기"></div>
           </label>
 
           <label class="field">
@@ -156,16 +156,16 @@
             <h2>결과</h2>
             <div class="result-toolbar-actions">
               <span id="lastUpdatedText" class="subtle last-updated">입력값이 변경되면 자동으로 다시 계산됩니다.</span>
-              <button id="downloadCsvBtn" class="ghost-button mini-button" type="button">CSV 다운로드</button>
-              <button id="resetSettingsBtn" class="ghost-button mini-button" type="button">설정 초기화</button>
-              <div class="tab-switcher" id="resultTabs">
-                <button type="button" class="tab-button active" data-tab="visual">시각화해서 보기</button>
-                <button type="button" class="tab-button" data-tab="text">텍스트로 보기</button>
+              <button id="downloadCsvBtn" class="ghost-button mini-button" type="button" aria-label="현재 스케줄을 CSV 파일로 내려받기" title="CSV 파일 다운로드">CSV 다운로드</button>
+              <button id="resetSettingsBtn" class="ghost-button mini-button" type="button" aria-label="저장된 설정을 지우고 샘플 데이터로 되돌리기" title="저장된 설정을 초기화하고 샘플로 되돌립니다">설정 초기화</button>
+              <div class="tab-switcher" id="resultTabs" role="tablist" aria-label="결과 보기 모드">
+                <button type="button" class="tab-button active" data-tab="visual" role="tab" id="resultTabVisual" aria-selected="true" aria-controls="visualTab">시각화해서 보기</button>
+                <button type="button" class="tab-button" data-tab="text" role="tab" id="resultTabText" aria-selected="false" aria-controls="textTab" tabindex="-1">텍스트로 보기</button>
               </div>
             </div>
           </div>
 
-          <div id="visualTab" class="tab-panel active">
+          <div id="visualTab" class="tab-panel active" role="tabpanel" aria-labelledby="resultTabVisual">
             <div class="visual-grid">
               <section class="sub-panel compact-sub-panel">
                 <div class="section-title-row small-title-row">
@@ -198,7 +198,7 @@
             </div>
           </div>
 
-          <div id="textTab" class="tab-panel">
+          <div id="textTab" class="tab-panel" role="tabpanel" aria-labelledby="resultTabText" hidden>
             <div class="text-grid">
               <section class="sub-panel compact-sub-panel">
                 <div class="section-title-row small-title-row">
