@@ -84,10 +84,11 @@ textarea {
 
 .hero-text {
   margin: 0;
-  max-width: 74ch;
   color: var(--muted);
   font-size: 0.92rem;
   line-height: 1.6;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .hero-glass {
@@ -132,7 +133,24 @@ textarea {
   align-self: start;
   position: sticky;
   top: 10px;
-  overflow: hidden;
+  max-height: calc(100vh - 20px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--ink-rgb), 0.25) transparent;
+}
+
+.controls::-webkit-scrollbar {
+  width: 8px;
+}
+
+.controls::-webkit-scrollbar-thumb {
+  background: rgba(var(--ink-rgb), 0.2);
+  border-radius: 999px;
+}
+
+.controls::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .panel-section {
@@ -224,11 +242,36 @@ input[type="number"],
 input[type="text"],
 textarea {
   width: 100%;
-  border: 1px solid rgba(102, 74, 32, 0.16);
+  border: 1px solid rgba(var(--ink-rgb), 0.16);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.82);
   padding: 10px 12px;
   color: var(--ink);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+input[type="date"]:hover,
+input[type="number"]:hover,
+input[type="text"]:hover,
+textarea:hover {
+  border-color: rgba(var(--ink-rgb), 0.28);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+input[type="date"]:focus,
+input[type="number"]:focus,
+input[type="text"]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: rgba(var(--accent-rgb), 0.55);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.18);
+  background: #fff;
+}
+
+button:focus-visible {
+  outline: 2px solid rgba(var(--accent-rgb), 0.6);
+  outline-offset: 2px;
 }
 
 textarea {
@@ -251,6 +294,10 @@ textarea {
 .secondary-button,
 .ghost-button {
   padding: 10px 14px;
+}
+
+.secondary-button {
+  padding: 7px 14px;
 }
 
 .primary-button {
@@ -324,7 +371,16 @@ textarea {
   padding: 12px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(102, 74, 32, 0.08);
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.month-card:hover,
+.schedule-item:hover,
+.worker-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(var(--accent-rgb), 0.22);
+  box-shadow: 0 8px 22px rgba(var(--ink-rgb), 0.06);
 }
 
 .auto-card h3 {
@@ -422,9 +478,11 @@ textarea {
 }
 
 .danger-button {
-  padding: 7px 10px;
-  background: rgba(176, 55, 47, 0.12);
+  padding: 5px 10px;
+  background: rgba(var(--accent-3-rgb), 0.12);
   color: var(--accent-3);
+  font-size: 0.78rem;
+  line-height: 1.2;
 }
 
 .date-pill,
@@ -445,7 +503,29 @@ textarea {
 }
 
 .summary-card {
-  padding: 14px;
+  padding: 16px;
+  border: 1px solid rgba(var(--ink-rgb), 0.08);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.summary-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, rgba(var(--accent-rgb), 0.5), rgba(var(--accent-rgb), 0));
+  opacity: 0.55;
+}
+
+.summary-card.balance-warn::before {
+  background: linear-gradient(180deg, rgba(var(--accent-3-rgb), 0.6), rgba(var(--accent-3-rgb), 0));
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(var(--ink-rgb), 0.08);
 }
 
 .summary-label,
@@ -870,6 +950,8 @@ textarea {
 
   .controls {
     position: static;
+    max-height: none;
+    overflow: visible;
   }
 }
 

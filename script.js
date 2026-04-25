@@ -61,7 +61,6 @@ const elements = {
   workdayCountInput: document.querySelector("#workdayCountInput"),
   addWorkdayBtn: document.querySelector("#addWorkdayBtn"),
   customWorkdayList: document.querySelector("#customWorkdayList"),
-  loadSampleBtn: document.querySelector("#loadSampleBtn"),
   dailyCountInput: document.querySelector("#dailyCountInput"),
   workerCountBadge: document.querySelector("#workerCountBadge"),
   workerChipPreview: document.querySelector("#workerChipPreview"),
@@ -1294,7 +1293,6 @@ elements.workersInput.addEventListener("input", () => {
   renderWorkerPreview();
   generateSchedule();
 });
-elements.loadSampleBtn.addEventListener("click", () => loadSampleData());
 if (elements.dailyCountInput) {
   elements.dailyCountInput.addEventListener("input", () => generateSchedule());
 }
