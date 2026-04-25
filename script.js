@@ -1265,9 +1265,6 @@ function loadSampleData() {
     buildWeeklyHolidayChecks(defaultWeeklyHolidayDays);
     renderPriorityEditor(defaultPriority);
     renderNthRuleEditor(defaultNthRules);
-    upsertHoliday(toDateKey(new Date(start.getFullYear(), start.getMonth(), 8, 12)), false);
-    upsertHoliday(toDateKey(new Date(start.getFullYear(), start.getMonth() + 1, 15, 12)), true);
-    upsertWorkday(toDateKey(new Date(start.getFullYear(), start.getMonth(), 11, 12)), 5);
     renderEntryLists();
     renderWorkerPreview();
   } finally {
