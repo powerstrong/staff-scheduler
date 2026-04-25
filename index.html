@@ -51,8 +51,18 @@
           </div>
 
           <label class="field">
-            <span>근무 인원</span>
-            <textarea id="workersInput" rows="3" placeholder="공백 또는 줄바꿈으로 구분"></textarea>
+            <span>기본 하루 근무 인원</span>
+            <input id="dailyCountInput" type="number" min="1" step="1" value="4">
+            <small class="field-hint">치과 주 6일 근무는 보통 하루 4명입니다. 성수기·특수일은 아래 예외 설정에서 조정하세요.</small>
+          </label>
+
+          <label class="field">
+            <span class="field-label-row">
+              <span>근무 인원</span>
+              <span id="workerCountBadge" class="badge soft-badge">0명</span>
+            </span>
+            <textarea id="workersInput" rows="3" placeholder="예: 김민지 박서연 이지훈 최유리&#10;공백 또는 줄바꿈으로 구분"></textarea>
+            <div id="workerChipPreview" class="chip-preview"></div>
           </label>
 
           <label class="field">
@@ -65,6 +75,7 @@
           <label class="field">
             <span>매주 자동 휴무 요일</span>
             <div id="weeklyHolidayChecks" class="weekday-checks compact-checks"></div>
+            <small class="field-hint">정기 휴무 요일을 선택하면 그 요일은 휴무로 표시되고 추가 근무 환산에서도 제외됩니다.</small>
           </label>
 
           <label class="field">
@@ -73,6 +84,7 @@
               <div id="nthRulesList" class="rule-list"></div>
               <button id="addNthRuleBtn" class="secondary-button" type="button">규칙 추가</button>
             </div>
+            <small class="field-hint">예: 매월 2번째·4번째 목요일 휴무.</small>
           </label>
 
           <p id="errorText" class="error-text" aria-live="polite"></p>
@@ -99,8 +111,8 @@
 
         <section class="panel-section compact-section">
           <div class="section-title-row">
-            <h2>커스텀 휴무일</h2>
-            <span class="subtle">무료휴일 체크 가능</span>
+            <h2>예외 휴무일</h2>
+            <span class="subtle">자동 규칙 외 추가 휴무</span>
           </div>
           <div class="inline-form compact-inline-form">
             <label class="field compact">
@@ -118,8 +130,8 @@
 
         <section class="panel-section compact-section">
           <div class="section-title-row">
-            <h2>커스텀 근무일</h2>
-            <span class="subtle">휴무일보다 우선</span>
+            <h2>예외 근무일</h2>
+            <span class="subtle">휴무일이어도 근무하거나 인원이 다른 날</span>
           </div>
           <div class="inline-form compact-inline-form workday-form">
             <label class="field compact">
@@ -140,11 +152,16 @@
         <div class="summary-grid compact-summary-grid" id="summaryGrid"></div>
 
         <section class="panel result-panel compact-result-panel">
-          <div class="section-title-row">
+          <div class="section-title-row result-toolbar">
             <h2>결과</h2>
-            <div class="tab-switcher" id="resultTabs">
-              <button type="button" class="tab-button active" data-tab="visual">시각화해서 보기</button>
-              <button type="button" class="tab-button" data-tab="text">텍스트로 보기</button>
+            <div class="result-toolbar-actions">
+              <span id="lastUpdatedText" class="subtle last-updated">입력값이 변경되면 자동으로 다시 계산됩니다.</span>
+              <button id="downloadCsvBtn" class="ghost-button mini-button" type="button">CSV 다운로드</button>
+              <button id="resetSettingsBtn" class="ghost-button mini-button" type="button">설정 초기화</button>
+              <div class="tab-switcher" id="resultTabs">
+                <button type="button" class="tab-button active" data-tab="visual">시각화해서 보기</button>
+                <button type="button" class="tab-button" data-tab="text">텍스트로 보기</button>
+              </div>
             </div>
           </div>
 
@@ -154,6 +171,11 @@
                 <div class="section-title-row small-title-row">
                   <h3>월간 캘린더</h3>
                   <span class="subtle">반년치도 한눈에 보기 쉽게 압축</span>
+                </div>
+                <div class="calendar-legend" aria-label="캘린더 색상 안내">
+                  <span class="legend-item"><span class="legend-swatch swatch-workday" aria-hidden="true"></span>근무일</span>
+                  <span class="legend-item"><span class="legend-swatch swatch-holiday" aria-hidden="true"></span>휴무일</span>
+                  <span class="legend-item"><span class="legend-swatch swatch-out" aria-hidden="true"></span>기간 외</span>
                 </div>
                 <div id="calendarGrid" class="calendar-grid compact-calendar-grid"></div>
               </section>
