@@ -28,12 +28,15 @@ const defaultNthRules = [
   { nth: 2, day: 4 },
   { nth: 4, day: 4 },
 ];
+const defaultDailyCount = 4;
+const STORAGE_KEY = "staff-scheduler/v1";
 
 const state = {
   customHolidays: [],
   customWorkdays: [],
   latestResult: null,
   activeTab: "visual",
+  hydrating: false,
 };
 
 const elements = {
@@ -58,7 +61,12 @@ const elements = {
   workdayCountInput: document.querySelector("#workdayCountInput"),
   addWorkdayBtn: document.querySelector("#addWorkdayBtn"),
   customWorkdayList: document.querySelector("#customWorkdayList"),
-  loadSampleBtn: document.querySelector("#loadSampleBtn"),
+  dailyCountInput: document.querySelector("#dailyCountInput"),
+  workerCountBadge: document.querySelector("#workerCountBadge"),
+  workerChipPreview: document.querySelector("#workerChipPreview"),
+  downloadCsvBtn: document.querySelector("#downloadCsvBtn"),
+  resetSettingsBtn: document.querySelector("#resetSettingsBtn"),
+  lastUpdatedText: document.querySelector("#lastUpdatedText"),
   summaryGrid: document.querySelector("#summaryGrid"),
   calendarGrid: document.querySelector("#calendarGrid"),
   scheduleList: document.querySelector("#scheduleList"),
@@ -129,6 +137,14 @@ function parseWeeklyHolidayDays() {
   return [...elements.weeklyHolidayChecks.querySelectorAll("input:checked")]
     .map((input) => Number(input.value))
     .sort((a, b) => a - b);
+}
+
+function getBaseDailyCount() {
+  const value = Number(elements.dailyCountInput?.value);
+  if (!Number.isInteger(value) || value <= 0) {
+    return defaultDailyCount;
+  }
+  return value;
 }
 
 function readNthRuleRows() {
@@ -321,6 +337,43 @@ function renderEntryLists() {
   updateAutoHolidayPreview();
 }
 
+function renderWorkerPreview() {
+  if (!elements.workerCountBadge || !elements.workerChipPreview) {
+    return;
+  }
+  const workers = normalizeWorkers(elements.workersInput.value);
+  elements.workerCountBadge.textContent = workers.length > 0 ? `총 ${workers.length}명` : "0명";
+  elements.workerChipPreview.innerHTML = "";
+  if (workers.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state subtle-empty";
+    empty.textContent = "근무자를 입력하면 칩으로 표시됩니다.";
+    elements.workerChipPreview.appendChild(empty);
+    return;
+  }
+  for (const worker of workers) {
+    const chip = document.createElement("span");
+    chip.className = "preview-chip";
+    chip.textContent = worker;
+    elements.workerChipPreview.appendChild(chip);
+  }
+}
+
+function updateLastUpdated() {
+  if (!elements.lastUpdatedText) {
+    return;
+  }
+  if (!state.latestResult?.generatedAt) {
+    elements.lastUpdatedText.textContent = "입력값이 변경되면 자동으로 다시 계산됩니다.";
+    return;
+  }
+  const time = state.latestResult.generatedAt;
+  const hh = String(time.getHours()).padStart(2, "0");
+  const mm = String(time.getMinutes()).padStart(2, "0");
+  const ss = String(time.getSeconds()).padStart(2, "0");
+  elements.lastUpdatedText.textContent = `최근 계산 완료 ${hh}:${mm}:${ss}`;
+}
+
 function assignWorkers(scheduleMap, dayKey, count, workerQueue, workerCount) {
   const list = scheduleMap.get(dayKey) ?? [];
   for (let index = 0; index < count; index += 1) {
@@ -332,8 +385,8 @@ function assignWorkers(scheduleMap, dayKey, count, workerQueue, workerCount) {
   scheduleMap.set(dayKey, list);
 }
 
-function assignExtraWorkersByPriority(scheduleMap, workDays, holidayKeys, customWorkdayKeys, workerCount, remainWork, workers) {
-  let currentMaxWorkers = 5;
+function assignExtraWorkersByPriority(scheduleMap, workDays, holidayKeys, customWorkdayKeys, workerCount, remainWork, workers, baseDailyCount) {
+  let currentMaxWorkers = baseDailyCount + 1;
   const maxAllowedWorkers = workers.length;
 
   while (remainWork > 0) {
@@ -376,12 +429,13 @@ function assignExtraWorkersByPriority(scheduleMap, workDays, holidayKeys, custom
   return { remainWork: 0, warning: "" };
 }
 
-function generate(start, end, workers, holidays, customWorkdays, freeHolidayCount, priorityOrder) {
+function generate(start, end, workers, holidays, customWorkdays, freeHolidayCount, priorityOrder, baseDailyCount, weeklyHolidayDays) {
   const scheduleMap = new Map();
   const workerQueue = [...workers];
   const workerCount = new Map(workers.map((worker) => [worker, 0]));
   const holidayKeys = new Set(holidays.map(toDateKey));
   const customWorkdayKeys = new Set(customWorkdays.keys());
+  const weeklyHolidaySet = new Set(weeklyHolidayDays);
   const workDays = [];
   const allDays = eachDay(start, end);
 
@@ -394,12 +448,12 @@ function generate(start, end, workers, holidays, customWorkdays, freeHolidayCoun
     if (holidayKeys.has(dayKey)) {
       continue;
     }
-    const baseWorkerCount = customWorkdays.get(dayKey) ?? 4;
+    const baseWorkerCount = customWorkdays.get(dayKey) ?? baseDailyCount;
     assignWorkers(scheduleMap, dayKey, baseWorkerCount, workerQueue, workerCount);
   }
 
-  const nonWeeklyHolidayKeys = holidays.filter((day) => day.getDay() !== 3);
-  let remainWork = (nonWeeklyHolidayKeys.length - freeHolidayCount) * 4;
+  const nonWeeklyHolidayKeys = holidays.filter((day) => !weeklyHolidaySet.has(day.getDay()));
+  let remainWork = Math.max(0, nonWeeklyHolidayKeys.length - freeHolidayCount) * baseDailyCount;
   let warning = "";
 
   if (remainWork > 0) {
@@ -411,6 +465,7 @@ function generate(start, end, workers, holidays, customWorkdays, freeHolidayCoun
       workerCount,
       remainWork,
       workers,
+      baseDailyCount,
     );
     remainWork = extraResult.remainWork;
     warning = extraResult.warning;
@@ -420,16 +475,16 @@ function generate(start, end, workers, holidays, customWorkdays, freeHolidayCoun
 }
 
 function buildTexts(result) {
-  const { start, end, scheduleMap, holidayKeys, workerTotals, workerDayCounts, workers, holidays, totalAssignments, workFromHolidays, priorityOrder, weeklyHolidayDays, nthRules, warning } = result;
+  const { start, end, scheduleMap, holidayKeys, workerTotals, workerDayCounts, workers, holidays, totalAssignments, workFromHolidays, priorityOrder, weeklyHolidayDays, nthRules, warning, baseDailyCount } = result;
   let outputText = "";
   let statisticText = "";
 
   statisticText += "<배치 규칙>\n";
-  statisticText += `- 기본 배치: 각 근무일에 4명 또는 커스텀 인원 수만큼 순환 배치\n`;
+  statisticText += `- 기본 배치: 각 근무일에 ${baseDailyCount}명 또는 커스텀 인원 수만큼 순환 배치\n`;
   statisticText += `- 배치 우선순위: ${formatPriority(priorityOrder)}\n`;
   statisticText += `- 주간 자동 휴무: ${weeklyHolidayDays.length > 0 ? weeklyHolidayDays.map((day) => dayNames[day]).join(", ") : "없음"}\n`;
   statisticText += `- 월별 자동 휴무: ${nthRules.length > 0 ? nthRules.map((rule) => `${rule.nth}번째 ${dayNames[rule.day]}`).join(", ") : "없음"}\n`;
-  statisticText += `- 추가 배치: 휴무일 수(무료휴일 제외) × 4\n`;
+  statisticText += `- 추가 배치: 주간 자동 휴무 외 휴무일 수(무료휴일 제외) × ${baseDailyCount}\n`;
   if (warning) {
     statisticText += `- 경고: ${warning}\n`;
   }
@@ -477,6 +532,13 @@ function generateSchedule() {
     return;
   }
 
+  const baseDailyCount = getBaseDailyCount();
+  if (baseDailyCount > workers.length) {
+    setError(`기본 하루 근무 인원(${baseDailyCount}명)이 등록된 근무자 수(${workers.length}명)보다 많습니다.`);
+    clearResults();
+    return;
+  }
+
   const priorityResult = { order: readPriorityOrder(), usedDefault: false, error: "" };
   const nthRuleResult = parseNthRules();
   const weeklyHolidayDays = parseWeeklyHolidayDays();
@@ -507,7 +569,15 @@ function generateSchedule() {
     }
   }
 
-  const freeHolidayCount = filteredCustomHolidays.filter((item) => item.isFree).length;
+  const finalHolidayKeys = new Set(holidays.map(toDateKey));
+  const weeklyHolidaySetEarly = new Set(weeklyHolidayDays);
+  const freeHolidayCount = filteredCustomHolidays.filter((item) => {
+    if (!item.isFree) return false;
+    if (!finalHolidayKeys.has(item.date)) return false;
+    const day = dateFromInput(item.date);
+    if (weeklyHolidaySetEarly.has(day.getDay())) return false;
+    return true;
+  }).length;
   const { scheduleMap, warning, remainingExtraAssignments } = generate(
     range.start,
     range.end,
@@ -516,6 +586,8 @@ function generateSchedule() {
     customWorkdayMap,
     freeHolidayCount,
     priorityResult.order,
+    baseDailyCount,
+    weeklyHolidayDays,
   );
 
   const holidayKeys = new Set(holidays.map(toDateKey));
@@ -531,8 +603,9 @@ function generateSchedule() {
     }
   }
 
-  const nonWednesdayHolidays = holidays.filter((day) => day.getDay() !== 3);
-  const workFromHolidays = (nonWednesdayHolidays.length - freeHolidayCount) * 4;
+  const weeklyHolidaySet = new Set(weeklyHolidayDays);
+  const nonWeeklyHolidays = holidays.filter((day) => !weeklyHolidaySet.has(day.getDay()));
+  const workFromHolidays = Math.max(0, (nonWeeklyHolidays.length - freeHolidayCount)) * baseDailyCount;
   const totalAssignments = [...workerTotals.values()].reduce((sum, value) => sum + value, 0);
   const texts = buildTexts({
     start: range.start,
@@ -550,6 +623,7 @@ function generateSchedule() {
     nthRules: nthRuleResult.rules,
     totalDays: eachDay(range.start, range.end).length,
     warning,
+    baseDailyCount,
   });
 
   state.latestResult = {
@@ -569,8 +643,10 @@ function generateSchedule() {
     priorityOrder: priorityResult.order,
     weeklyHolidayDays,
     nthRules: nthRuleResult.rules,
+    baseDailyCount,
     outputText: texts.outputText,
     statisticText: texts.statisticText,
+    generatedAt: new Date(),
   };
 
   const errors = [priorityResult.error, nthRuleResult.error].filter(Boolean);
@@ -579,6 +655,7 @@ function generateSchedule() {
   }
 
   renderResults();
+  saveSettings();
 }
 
 function clearResults() {
@@ -649,12 +726,47 @@ function renderSummary() {
     return;
   }
 
-  const { start, end, scheduleMap, holidays, totalAssignments, workFromHolidays, priorityOrder } = state.latestResult;
+  const { start, end, scheduleMap, holidays, totalAssignments, workFromHolidays, workers, workerTotals } = state.latestResult;
+  const totals = workers.map((worker) => workerTotals.get(worker) ?? 0);
+  const maxAssign = totals.length > 0 ? Math.max(...totals) : 0;
+  const minAssign = totals.length > 0 ? Math.min(...totals) : 0;
+  const diff = maxAssign - minAssign;
+  const avgAssign = totals.length > 0 ? totalAssignments / totals.length : 0;
+  const ratio = avgAssign > 0 ? diff / avgAssign : 0;
+  let balanceLabel;
+  let balanceTone;
+  if (totalAssignments === 0) {
+    balanceLabel = "데이터 없음";
+    balanceTone = "balance-neutral";
+  } else if (avgAssign < 5) {
+    if (diff <= 1) { balanceLabel = "매우 균등"; balanceTone = "balance-good"; }
+    else if (diff <= 2) { balanceLabel = "양호"; balanceTone = "balance-ok"; }
+    else { balanceLabel = "확인 필요"; balanceTone = "balance-warn"; }
+  } else if (ratio <= 0.05) {
+    balanceLabel = "매우 균등";
+    balanceTone = "balance-good";
+  } else if (ratio <= 0.15) {
+    balanceLabel = "양호";
+    balanceTone = "balance-ok";
+  } else {
+    balanceLabel = "확인 필요";
+    balanceTone = "balance-warn";
+  }
+
   const cards = [
     { label: "기간", value: `${state.latestResult.totalDays}일`, note: `${toDateKey(start)} ~ ${toDateKey(end)}` },
-    { label: "근무일", value: `${scheduleMap.size}일`, note: `${totalAssignments - workFromHolidays}회 기본 근무` },
-    { label: "휴무일", value: `${holidays.length}일`, note: `${workFromHolidays}회 추가 근무 환산` },
-    { label: "우선순위", value: formatPriority(priorityOrder), note: state.latestResult.warning || "현재 설정 기준 계산 완료" },
+    { label: "근무일", value: `${scheduleMap.size}일`, note: `기본 근무 ${totalAssignments - workFromHolidays}회` },
+    { label: "휴무일", value: `${holidays.length}일`, note: `추가 근무 환산 ${workFromHolidays}회` },
+    {
+      label: "균형 상태",
+      value: balanceLabel,
+      note: totalAssignments > 0
+        ? (state.latestResult.warning
+          ? `${state.latestResult.warning} · 평균 ${avgAssign.toFixed(1)}회 · 차이 ${diff}회`
+          : `최대 ${maxAssign}회 · 최소 ${minAssign}회 · 차이 ${diff}회 (평균 ${avgAssign.toFixed(1)}회)`)
+        : (state.latestResult.warning || "근무자가 배치되면 표시됩니다."),
+      tone: state.latestResult.warning && totalAssignments > 0 ? "balance-warn" : balanceTone,
+    },
   ];
 
   for (const card of cards) {
@@ -662,6 +774,9 @@ function renderSummary() {
     node.querySelector(".summary-label").textContent = card.label;
     node.querySelector(".summary-value").textContent = card.value;
     node.querySelector(".summary-note").textContent = card.note;
+    if (card.tone) {
+      node.classList.add(card.tone);
+    }
     target.appendChild(node);
   }
 }
@@ -813,15 +928,42 @@ function renderResults() {
   renderSchedule();
   renderWorkerStats();
   renderTextResults();
+  updateLastUpdated();
 }
 
 function setActiveTab(tab) {
   state.activeTab = tab;
   for (const button of elements.resultTabs.querySelectorAll(".tab-button")) {
-    button.classList.toggle("active", button.dataset.tab === tab);
+    const isActive = button.dataset.tab === tab;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+    button.setAttribute("tabindex", isActive ? "0" : "-1");
   }
   elements.visualTab.classList.toggle("active", tab === "visual");
   elements.textTab.classList.toggle("active", tab === "text");
+  elements.visualTab.toggleAttribute("hidden", tab !== "visual");
+  elements.textTab.toggleAttribute("hidden", tab !== "text");
+}
+
+function handleResultTabKey(event) {
+  const buttons = [...elements.resultTabs.querySelectorAll(".tab-button")];
+  const currentIndex = buttons.findIndex((btn) => btn === document.activeElement);
+  if (currentIndex < 0) return;
+  let nextIndex = currentIndex;
+  if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+    nextIndex = (currentIndex + 1) % buttons.length;
+  } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+    nextIndex = (currentIndex - 1 + buttons.length) % buttons.length;
+  } else if (event.key === "Home") {
+    nextIndex = 0;
+  } else if (event.key === "End") {
+    nextIndex = buttons.length - 1;
+  } else {
+    return;
+  }
+  event.preventDefault();
+  buttons[nextIndex].focus();
+  setActiveTab(buttons[nextIndex].dataset.tab);
 }
 
 function syncDates() {
@@ -844,13 +986,14 @@ function getNextQuarterEnd(fromDate) {
   return upcoming[1] ?? upcoming[upcoming.length - 1] ?? candidates[candidates.length - 1];
 }
 
-function buildWeeklyHolidayChecks() {
+function buildWeeklyHolidayChecks(activeDays = defaultWeeklyHolidayDays) {
   elements.weeklyHolidayChecks.innerHTML = "";
+  const activeSet = new Set(activeDays);
   for (let day = 0; day < 7; day += 1) {
     const label = document.createElement("label");
     label.className = "weekday-option";
     label.innerHTML = `<input type="checkbox" value="${day}"> <span>${dayNames[day]}</span>`;
-    if (defaultWeeklyHolidayDays.includes(day)) {
+    if (activeSet.has(day)) {
       label.querySelector("input").checked = true;
     }
     label.querySelector("input").addEventListener("change", () => {
@@ -955,27 +1098,181 @@ function createNthRuleRow(rule = { nth: 2, day: 4 }) {
 
 function renderNthRuleEditor(rules = defaultNthRules) {
   elements.nthRulesList.innerHTML = "";
+  if (!Array.isArray(rules) || rules.length === 0) {
+    return;
+  }
   for (const rule of rules) {
     elements.nthRulesList.appendChild(createNthRuleRow(rule));
   }
 }
 
-function loadSampleData() {
-  const today = new Date();
-  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12);
-  const end = getNextQuarterEnd(start);
-  elements.startDate.value = toDateKey(start);
-  elements.endDate.value = toDateKey(end);
-  elements.workersInput.value = "최다은 김서준 박지우 이현우 한서윤";
+function collectSettings() {
+  return {
+    version: 1,
+    startDate: elements.startDate.value || "",
+    endDate: elements.endDate.value || "",
+    workersInput: elements.workersInput.value || "",
+    dailyCount: getBaseDailyCount(),
+    weeklyHolidayDays: parseWeeklyHolidayDays(),
+    priorityOrder: readPriorityOrder(),
+    nthRules: readNthRuleRows(),
+    customHolidays: state.customHolidays.map((item) => ({ date: item.date, isFree: item.isFree })),
+    customWorkdays: state.customWorkdays.map((item) => ({ date: item.date, workerCount: item.workerCount })),
+  };
+}
+
+function saveSettings() {
+  if (state.hydrating) {
+    return;
+  }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(collectSettings()));
+  } catch (error) {
+    console.warn("설정 저장 실패", error);
+  }
+}
+
+function applySettings(settings) {
+  if (!settings || typeof settings !== "object") {
+    return false;
+  }
+  state.hydrating = true;
+  try {
+    if (typeof settings.startDate === "string") {
+      elements.startDate.value = settings.startDate;
+    }
+    if (typeof settings.endDate === "string") {
+      elements.endDate.value = settings.endDate;
+    }
+    if (typeof settings.workersInput === "string") {
+      elements.workersInput.value = settings.workersInput;
+    }
+    const dailyCount = Number(settings.dailyCount);
+    if (Number.isInteger(dailyCount) && dailyCount > 0) {
+      elements.dailyCountInput.value = String(dailyCount);
+    }
+    const weeklyHolidayDays = Array.isArray(settings.weeklyHolidayDays)
+      ? settings.weeklyHolidayDays.filter((day) => Number.isInteger(day) && day >= 0 && day <= 6)
+      : defaultWeeklyHolidayDays;
+    buildWeeklyHolidayChecks(weeklyHolidayDays);
+    const validPriority = Array.isArray(settings.priorityOrder)
+      && settings.priorityOrder.length === 7
+      && new Set(settings.priorityOrder).size === 7
+      && settings.priorityOrder.every((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+    renderPriorityEditor(validPriority ? settings.priorityOrder : defaultPriority);
+    const nthRules = Array.isArray(settings.nthRules)
+      ? settings.nthRules.filter((rule) => rule && Number.isInteger(rule.nth) && rule.nth >= 1 && rule.nth <= 5 && Number.isInteger(rule.day) && rule.day >= 0 && rule.day <= 6)
+      : defaultNthRules;
+    renderNthRuleEditor(nthRules);
+    state.customHolidays = Array.isArray(settings.customHolidays)
+      ? settings.customHolidays.filter((item) => item && typeof item.date === "string").map((item) => ({ date: item.date, isFree: Boolean(item.isFree) }))
+      : [];
+    state.customWorkdays = Array.isArray(settings.customWorkdays)
+      ? settings.customWorkdays.filter((item) => {
+          if (!item || typeof item.date !== "string") return false;
+          const wc = Number(item.workerCount);
+          return Number.isInteger(wc) && wc > 0;
+        }).map((item) => ({ date: item.date, workerCount: Number(item.workerCount) }))
+      : [];
+    state.customHolidays.sort((a, b) => a.date.localeCompare(b.date));
+    state.customWorkdays.sort((a, b) => a.date.localeCompare(b.date));
+  } finally {
+    state.hydrating = false;
+  }
+  return true;
+}
+
+function tryLoadSettings() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return false;
+    }
+    const settings = JSON.parse(raw);
+    return applySettings(settings);
+  } catch (error) {
+    console.warn("설정 불러오기 실패", error);
+    return false;
+  }
+}
+
+function resetSettings() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    console.warn("설정 초기화 실패", error);
+  }
   state.customHolidays = [];
   state.customWorkdays = [];
-  buildWeeklyHolidayChecks();
-  renderPriorityEditor(defaultPriority);
-  renderNthRuleEditor(defaultNthRules);
-  upsertHoliday(toDateKey(new Date(start.getFullYear(), start.getMonth(), 8, 12)), false);
-  upsertHoliday(toDateKey(new Date(start.getFullYear(), start.getMonth() + 1, 15, 12)), true);
-  upsertWorkday(toDateKey(new Date(start.getFullYear(), start.getMonth(), 11, 12)), 5);
-  renderEntryLists();
+  if (elements.dailyCountInput) {
+    elements.dailyCountInput.value = String(defaultDailyCount);
+  }
+  loadSampleData();
+}
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  if (/[",\n\r]/.test(text)) {
+    return `"${text.replaceAll('"', '""')}"`;
+  }
+  return text;
+}
+
+function downloadScheduleCsv() {
+  if (!state.latestResult) {
+    return;
+  }
+  const { start, end, scheduleMap, holidayKeys } = state.latestResult;
+  const rows = [["date", "weekday", "type", "worker_count", "workers"]];
+  for (const day of eachDay(start, end)) {
+    const key = toDateKey(day);
+    const entries = scheduleMap.get(key) ?? [];
+    const isHoliday = holidayKeys.has(key) && entries.length === 0;
+    rows.push([
+      key,
+      dayNames[day.getDay()],
+      isHoliday ? "holiday" : "workday",
+      String(entries.length),
+      entries.map((entry) => entry.name).join(" "),
+    ]);
+  }
+  const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\r\n");
+  const blob = new Blob(["﻿", csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `schedule-${toDateKey(start)}-${toDateKey(end)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function loadSampleData() {
+  state.hydrating = true;
+  try {
+    const today = new Date();
+    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12);
+    const end = getNextQuarterEnd(start);
+    elements.startDate.value = toDateKey(start);
+    elements.endDate.value = toDateKey(end);
+    elements.workersInput.value = "최다은 김서준 박지우 이현우 한서윤";
+    if (elements.dailyCountInput) {
+      elements.dailyCountInput.value = String(defaultDailyCount);
+    }
+    state.customHolidays = [];
+    state.customWorkdays = [];
+    buildWeeklyHolidayChecks(defaultWeeklyHolidayDays);
+    renderPriorityEditor(defaultPriority);
+    renderNthRuleEditor(defaultNthRules);
+    upsertHoliday(toDateKey(new Date(start.getFullYear(), start.getMonth(), 8, 12)), false);
+    upsertHoliday(toDateKey(new Date(start.getFullYear(), start.getMonth() + 1, 15, 12)), true);
+    upsertWorkday(toDateKey(new Date(start.getFullYear(), start.getMonth(), 11, 12)), 5);
+    renderEntryLists();
+    renderWorkerPreview();
+  } finally {
+    state.hydrating = false;
+  }
   generateSchedule();
 }
 
@@ -992,8 +1289,23 @@ elements.endDate.addEventListener("change", () => {
   generateSchedule();
 });
 
-elements.workersInput.addEventListener("input", () => generateSchedule());
-elements.loadSampleBtn.addEventListener("click", () => loadSampleData());
+elements.workersInput.addEventListener("input", () => {
+  renderWorkerPreview();
+  generateSchedule();
+});
+if (elements.dailyCountInput) {
+  elements.dailyCountInput.addEventListener("input", () => generateSchedule());
+}
+if (elements.downloadCsvBtn) {
+  elements.downloadCsvBtn.addEventListener("click", () => downloadScheduleCsv());
+}
+if (elements.resetSettingsBtn) {
+  elements.resetSettingsBtn.addEventListener("click", () => {
+    if (window.confirm("저장된 설정을 초기화하고 샘플 데이터로 되돌릴까요?")) {
+      resetSettings();
+    }
+  });
+}
 elements.addNthRuleBtn.addEventListener("click", () => {
   elements.nthRulesList.appendChild(createNthRuleRow({ nth: 2, day: 4 }));
   updateAutoHolidayPreview();
@@ -1060,10 +1372,18 @@ elements.resultTabs.addEventListener("click", (event) => {
   }
   setActiveTab(button.dataset.tab);
 });
+elements.resultTabs.addEventListener("keydown", handleResultTabKey);
 
 (function init() {
-  buildWeeklyHolidayChecks();
-  renderPriorityEditor(defaultPriority);
   setActiveTab("visual");
-  loadSampleData();
+  if (tryLoadSettings()) {
+    renderEntryLists();
+    renderWorkerPreview();
+    generateSchedule();
+  } else {
+    buildWeeklyHolidayChecks(defaultWeeklyHolidayDays);
+    renderPriorityEditor(defaultPriority);
+    loadSampleData();
+  }
+  updateLastUpdated();
 })();
